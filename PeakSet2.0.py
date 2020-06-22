@@ -40,7 +40,7 @@ def peak_creator (file_path):
     #Loop over all the rows in the files, sroting the relevant information in variables to append to my empty list above
     
     for row in reader:
-        #row = [id, m/z, rt, row number, peak status, rt start, rt end, rt duration, peak height, peak area, data points]
+        #row = [m/z, rt, peak height]
         
         #Now that I know the types and the data lets format it
         
@@ -185,7 +185,10 @@ class PeakSet(Peak):
     def peakset_storage(list_of_peaksets):
         
         super().peak_storage(list_of_peaksets)
+    
         
+    #Found problem so can remove these methods
+    
     '''
     This is far from ideal but having to have this method to filter through and remove
     repeated values in a list as the match_peaks method bellow keeps producing duplicates
@@ -220,9 +223,8 @@ class PeakSet(Peak):
         return unique_values
         
     '''
-    The buffer value in match_peaks seems to be too generous and because of this it allows
-    For differing values between the 2 files, it may be entirely possible that its just that one
-    file has more of the same metabolite than the other but then again im not sure if thats possible
+    If an intensity cut off is provdied for the peak lists it can produce differing
+    numbers between the matched peaks
     
     So I'm gonna have to write a new function bellow to make the 2 the same size
     '''
@@ -289,7 +291,7 @@ class PeakSet(Peak):
                 return same_size
     
     #I think this method is broken in the sense that when matching peaks, it is
-    #Including the same peak multiple times, cant debug now so leaving for later
+    #Including the same peak multiple times, need to debug
     #Comment made on 18/06
 
     def find_peaksets(peakset_list,another_peakset_list, return_unmatched):
@@ -429,10 +431,12 @@ class PeakSet(Peak):
             print("length of unique after the first and second  file is", len(unique))
             return matched_first, matched_second, unique
      
-                    
-    #I dont feel like this step is entirely necessary to be honest, may not be worth fixing
-    #Though I have figured out that the primary probelm is in the buffer value, its way too high
-    #So thats why I'm getting so many damn peaks
+        
+    '''                
+    I dont know if this step is entirely necessary to be honest, may not be worth fixing
+    Though I have figured out that the primary probelm is in the buffer value, its way too high
+    So thats why the number of peaks is too high, need a better way to compare them
+    '''
     
     def match_peaks_rt_step(self, another_peak_set_obj):
         '''
@@ -474,7 +478,9 @@ class PeakSet(Peak):
         another_peak_set_obj.peaks = matched_second  
         
         
+#Test the above transformed classes before transferring to proper File to store peak classes 
         
+ 
 file = peak_creator("reduced_multi_1_full.csv")
 
 file2 = peak_creator("reduced_multi_2_full.csv")
@@ -512,7 +518,7 @@ for i in sig1[:6]:
 '''
 End of work note (18/06)
 
-classes seem to be al working fine, just need to srot the issue of why there are repeats
+classes seem to be all working fine, just need to srot the issue of why there are repeats
 in the matching peaks class, almost certain its something to do with the biffer value
 and getting more than intended in there
 
