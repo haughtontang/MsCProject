@@ -222,7 +222,7 @@ class PeakSet(object):
         for i in peakset_list:
             for j in another_peakset_list:
                 
-                #The m/z value is stored at the 0th index in the files
+                #use getter to extraxt mz from peak object and store this in seperate variable with the buffer
                 
                 upper_diff = j.get_mz() + buffer
                 lower_diff = j.get_mz() - buffer
