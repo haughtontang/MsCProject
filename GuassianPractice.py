@@ -6,90 +6,68 @@ Created on Fri Jun 12 14:42:58 2020
 """
 
 import GPy
-from PeakTools import PeakSet
-from PeakTools import Plotter
+from PeakTools import PeakSet as pt
+from PeakTools import Plotter as plot
+import UsefulMethods as um
 import numpy as np
 
-multi1 = PeakSet('reduced_multi_1.csv')
-multi2 = PeakSet('reduced_multi_2.csv')
+#Import and make peaks
 
-multi1.sort_peaks(8)
-multi2.sort_peaks(8)
+multi1 = um.peak_creator('reduced_multi_1_full.csv')
+multi2 = um.peak_creator('reduced_multi_2_full.csv')
 
-print(len(multi1.peaks))
+#Sort by intensity
 
-multi1.cut_off(5e6, True)
-multi2.cut_off(5e6, True)
+multi1 = um.sort_peaks(multi1, "intensity", True)
+multi2 = um.sort_peaks(multi2, "intensity", True)
 
-print(len(multi1.peaks))
-print(len(multi2.peaks))
+#Get the most sig peaks
 
-#This method is the step where the repeated values are being generated
+multi1 = um.most_sig_peaks(multi1, 5e6)
+multi2 = um.most_sig_peaks(multi2, 5e6)
 
-multi1.match_peaks(multi2)
+matched1, matched2 = pt.find_peaksets(multi1, multi2, False)
 
-print(len(multi1.peaks))
-print(len(multi2.peaks))
+print(len(matched1))
+print(len(matched2))
 
-multi1_rt = Plotter.rt_extract_convert(multi1)
-multi2_rt = Plotter.rt_extract_convert(multi2)
 
-rt_minus = Plotter.rt_minus_rt_plot(multi1_rt, multi2_rt)
+multi1_rt = plot.rt_extract_convert(matched1)
+multi2_rt = plot.rt_extract_convert(matched2)
 
-print(rt_minus[:4])
+rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+
+#print(rt_minus[:20])
 
 #Try the GP but for the anchors only
+'''
+import MakeAnchors as ma
 
-from PeakTools import Anchor
+a1 = ma.filter_mz(matched1, 5e7)
+a2 = ma.filter_mz(matched2, 5e7)
 
-anchor = Anchor('reduced_multi_1.csv')
-anchor.sort_peaks(8)
+a1 = ma.filter_rt(a1)
+a2 = ma.filter_rt(a2)
 
-#print(len(anchor.peaks))
-anchor.most_sig_peaks(5e6,True)
-#print("Anchors v sig", len(anchor.peaks))
+a1 = pt.make_same_size(a1,a2)
 
-anchor.filter_mz(5e7)
-#print(len(anchor.peaks))
+multi1_rt = plot.rt_extract_convert(a1)
+multi2_rt = plot.rt_extract_convert(a2)
 
-anchor.filter_rt()
-#print(len(anchor.peaks))
-
-anchor2 = Anchor('reduced_multi_2.csv')
-anchor2.sort_peaks(8)
-
-#print(len(anchor.peaks))
-anchor2.most_sig_peaks(5e6,True)
-#print("Anchors v sig", len(anchor.peaks))
-
-anchor2.filter_mz(5e7)
-#print(len(anchor.peaks))
-
-anchor2.filter_rt()
-#print(len(anchor.peaks))
-
-PeakSet.make_same_size(anchor, anchor2)
-
-anchor1_rt = Plotter.rt_extract_convert(anchor)
-print(len(anchor1_rt))
-anchor2_rt = Plotter.rt_extract_convert(anchor2)
-print(len(anchor2_rt))
-anchor_diff = Plotter.rt_minus_rt_plot(anchor2_rt, anchor1_rt)
-print(len(anchor_diff))
-plot = Plotter(anchor2_rt,anchor_diff,"Anchor RT Difference", "RT Multi 2", "RT Multi 1  minus RT Multi 2", False)
-
+rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+'''
 import numpy as np
 
-X = anchor2_rt
-Y = anchor_diff
+X = multi1_rt
+Y = rt_minus
 
 #This is needed to make it an array/2d list so it can be used in the guassian
 
 #Imports
 #Create peakset objects and match them
 
-X = np.array(anchor2_rt).reshape(len(anchor2_rt),1)
-Y = np.array(anchor_diff).reshape(len(anchor_diff),1)
+X = np.array(multi1_rt).reshape(len(multi1_rt),1)
+Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
 kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=1.)
 

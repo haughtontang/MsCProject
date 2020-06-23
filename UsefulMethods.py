@@ -8,6 +8,7 @@ Created on Thu Jun 18 16:58:41 2020
 import csv
 from operator import itemgetter
 from operator import attrgetter
+from PeakTools import Peak
 
 def peak_creator (file_path):
     
@@ -51,13 +52,10 @@ def peak_creator (file_path):
         
         #Now that its properly formatted as the proper type put it into a list
         
-        peaks.append([mz, rt, height])
-    
-    #Use Pythons built in sorted function to sort by height, m/z and then rt
-    
-    sorted_peaks = sorted(peaks, key = itemgetter(2), reverse = True)
-    
-    return sorted_peaks
+        peaks.append(Peak(mz, rt, height))
+        
+    return peaks
+
 
 def most_sig_peaks(peak_obj_list, value):
         
@@ -75,21 +73,49 @@ def most_sig_peaks(peak_obj_list, value):
         
         sig_peaks = []
         
-        for row in peak_obj_list:
-            
-            #intensity(height) is at the 8th index
-            
-            intesnity = row.get_intensity()
-            
-            if intesnity >= value:
-                
-                #Only stores the peaks that reach the condition of intensity
-                
-                sig_peaks.append(row)
+        #variable for checking the instance of the argument
         
-        #Return updated list of sig peaks    
+        flag = isinstance(peak_obj_list[0], Peak)
         
-        return sig_peaks
+        #Check if the given list is a Peak or peakset object list
+        
+        if flag:
+        
+            for row in peak_obj_list:
+                
+                #intensity(height) is at the 8th index
+                
+                intesnity = row.get_intensity()
+                
+                if intesnity >= value:
+                    
+                    #Only stores the peaks that reach the condition of intensity
+                    
+                    sig_peaks.append(row)
+            
+            #Return updated list of sig peaks    
+            
+            return sig_peaks
+        
+        #If the list given isnt a Peak obk list then it must be a Peakset, requires a slight alteration when grabbing intensity
+        
+        else:
+            
+            for row in peak_obj_list:
+                
+                #istore the intensity as a variable
+                
+                intesnity = row.get_peak().get_intensity()
+                
+                if intesnity >= value:
+                    
+                    #Only stores the peaks that reach the condition of intensity
+                    
+                    sig_peaks.append(row)
+            
+            #Return updated list of sig peaks    
+            
+            return sig_peaks
     
 #Sort peak object in descending of index passed to the argument
     

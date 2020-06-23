@@ -1,429 +1,71 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 11 14:11:31 2020
+Created on Mon Jun 22 14:24:53 2020
 
 @author: Don Haughton
-
-Several classes that have differing functionality;
-The main purpose of these classes are to convert picked peak files into corresponding objects
-depending on their purpose i.e Peak, peakset ect
-
-From there the objects can be manipulated to eventually visualise the differenece in RT 
-(Or other paramteres depending on your prefference) to help solve the probelm of RT alignment
 """
 
-#These imports are necessary for reading .csv files and sorting by specific indecies
-
-import csv
-from operator import itemgetter
-
-class Peak:
+class Peak(object):
     
-    #Constructor for creating objects that will contain a list of peaks
-    
-    def __init__ (self, file_path):
+    def __init__(self, mz, rt, intensity):
         
         '''
         Parameters
         ----------
-        file_path: the file path to a file of picked peaks, expected format is .csv
-        DESCRIPTION: This constructor will parse through the file and create a list attribute
-        where each index in the list represents all the information that correspond to a single peak
-        i.e m/z, rt, hegiht ect...
+        mz: float
+        rt: float
+        intensity: float
+        DESCRIPTION: This constructor will create peak objects- which are defined by the 3 
+        arguments passed to the constrcutor
         -------
         '''
         
-        file = open(file_path, newline = '')
-
-        #The reader is part of the csv library but it stores this as an obkect, need to do more to extract the data in the file
-        
-        reader = csv.reader(file)
-        
-        #Skips the names of the columns in the file
-        
-        next(reader)
-        
-        #Empty list for storing the peak data
-        
-        self.peaks = []
-        
-        #Loop over all the rows in the files, sroting the relevant information in variables to append to my empty list above
-        
-        for row in reader:
-            #row = [id, m/z, rt, row number, peak status, rt start, rt end, rt duration, peak height, peak area, data points]
-            
-            #Now that I know the types and the data lets format it
-            
-            peak_id = int(row[0])
-            mz = float(row[1])
-            rt = float(row[2])
-            row_number = int(row[3])
-            status = str(row[4])
-            rt_start = float(row[5])
-            rt_end = float(row[6])
-            rt_duration = float(row[7])
-            height =  float(row[8])
-            area = float(row[9])
-            data_point = int(row[10])
-            
-            #Now that its properly formatted as the proper type put it into a list
-            
-            self.peaks.append([peak_id, mz, rt, row_number, status, rt_start, rt_end, rt_duration, height, area, data_point])
-
-    #Sort peak object in descending of index passed to the argument
+        self.mz = mz
+        self.rt = rt
+        self.intensity = intensity
     
-    def sort_peaks(self, column_to_sort_by):
-        
-        '''
-        Parameters
-        ----------
-        column_to_sort_by: The index of the column you wish to sort by in the object
-        DESCRIPTION: The function will sort the peak list attribute of the peak object by the 
-        Index that is passed to the argument.
-        -------
-        '''
-        
-        self.peaks = sorted(self.peaks, key = itemgetter(column_to_sort_by), reverse = True)
-        
-    #Next a function for extracting the most intesne peaks
+    #Getters to be used to get specific access to the peak objects attributes
     
-    def most_sig_peaks(self, value, alter_object):
-        
-        '''
-        Parameters
-        ----------
-        value: int/double- the cut off intensity value
-        alter_object: boolean, if true it will alter the peak list attribute of the object,
-        if false, it returns a new list
-        DESCRIPTION: The function will loop through the provided peak list and remove any peaks that are 
-        bellow the intensity value that is provided in the argument. 
-        -------
-        '''
-        
-        #New variable to be returned at the end
-        
-        sig_peaks = []
-        
-        for i in self.peaks:
-            
-            #intensity(height) is at the 8th index
-            
-            intesnity = i[8]
-            
-            if intesnity >= value:
-                
-                #Only stores the peaks that reach the condition of intensity
-                
-                sig_peaks.append(i)
-        
-        #Changes the peak list attribute of the object to be equal to the the newly created sig peaks list
-        
-        if alter_object == True:
-        
-            self.peaks = sig_peaks
-            
-        else:
-            
-            return sig_peaks
-                
     def get_mz(self):
-        '''
-        Parameters
-        ----------
-        self : a peak object
-        DESCRIPTION: extracts the m/z values from the object that is passed to it and creats a new list
-        variable containing those values
-        RETURNS
-        -------
-        A list of those extracted m/z values
-        '''
         
-        #New variable to be returned at the end
-        
-        ordered_mz = []
+        return self.mz
     
-        for i in self.peaks:
-            
-            #m/z is at the second index
-            
-            #A single index in the peak list contains multiple values (m/z, rt, height) so the second index is needed
-            
-            mz = i[1]
-            
-            ordered_mz.append(mz)
-            
-        return ordered_mz
-
     def get_rt(self):
-        '''
-        Parameters
-        ----------
-        self : a peak object
-        DESCRIPTION: extracts the rt values from the object that is passed to it
-    
-        Returns
-        -------
-        Another list of just rt values corresponding to the rt values in the peak list attribute of peak
-        '''
         
-        #New variable to be returned at the end
-        
-        ordered_rt = []
+        return self.rt
     
-        for i in self.peaks:
+    def get_intensity(self):
+        
+        return self.intensity
             
-             #rt is at the third index
-            
-             #A single index in the peak list contains multiple values (m/z, rt, height) so the second index is needed
-            
-            rt = i[2]
-            
-            ordered_rt.append(rt)
-            
-        return ordered_rt
-    
-#The stats package will be needed for calculating the mean for a aprticular function
-    
-import statistics
-
-#Anchor isn't that different from a peak bar the methods that change the attributes
-
-class Anchor(Peak):
-    
-    #Constructor, exactly the same as a peak, only the methods will differ
-    
-    def __init__(self, file_path):
-        
-        '''
-        Parameters
-        ----------
-        file_path: the file path to a file of picked peaks, expected format is .csv
-        DESCRIPTION: This constructor will parse through the file and create a list attribute
-        where each index in the list represents all the information that correspond to a single peak
-        i.e m/z, rt, hegiht ect...
-        -------
-        '''
-        
-        super().__init__(file_path)
-        
-    def filter_mz(self, sig_val):
-        
-        '''
-        Parameters
-        ----------
-        self : Anchor object 
-        sig_val: To establish an acceptable m/z range we want to get the average m/z value from 
-        Some very sig peaks, to get these you need to input what intesnity cut off you want to
-        use to get the most intese peaks
-        DESCRIPTION: filters through the list that is passed and removes
-        Values from it that dont satisfy the criteria
-        In this case that is those m/z values for peaks that are higher or lower
-        Than the average of the very significant peaks with a 10% buffer either way    
-        '''
-        
-        #Get a list of peaks that are very significant
        
-        very_sig_peaks = Peak.most_sig_peaks(self, sig_val, False)
-        
-        #Empty list variable to be populated with them/z values for the very sig peaks in the list above
-        
-        mz_list = []
-        
-        #Get the mz values for these very sig peaks
-        
-        for i in very_sig_peaks:
-            mz = i[1]
-            mz_list.append(mz)
-        
-        #Calculate the avg of these m/z values and then allow a buffer of +/- 10% of that average
-        
-        average_mz = statistics.mean(mz_list)
-        
-        #These represent the upper and lower ranges of the buffers, each one being the mean + 10% of the bean and - 10% of the mean respectively
-        
-        comparible_up = (average_mz /100 * 10) + average_mz 
-        comparible_down = average_mz - (average_mz /100 * 10) 
-       
-        #Go through the list passd to the function and remove any values that dont fall within the upper and lower buffers
-        
-        for i in self.peaks:
-            
-            #Looking to compare m/z which is at the second index
-            
-            row_to_be_checked = i[1]
-            
-            #If the m/z value doesnt fall between the upper and lower tolerances it is removed
-            
-            if row_to_be_checked > comparible_up or row_to_be_checked < comparible_down:
-                    
-                self.peaks.remove(i)
-            
-                
-    def filter_rt(self):
-        '''
-        Parameters
-        ----------
-        self : Anchor object 
-        DESCRIPTION: filters through the attribute list of the obejct that is passed and removes
-        Values from it that dont satisfy the criteria
-        In this case that is those rt values for peaks that are higher or lower
-        Than the most significant peaks rt value with a 15% buffer either way
-        '''
-        
-        #Get a list of rt values from the peak list passed to the function
-        
-        rt_list = Peak.get_rt(self)
-        
-        #Upper and lower values to compare the whole list against
-        
-        #Take the RT of the most intesne peak and allow a +/- 15% buffer
-        
-        comparible_up = rt_list[0] + (rt_list[0]/100 * 15)
-        comparible_down = rt_list[0] - (rt_list[0]/100 * 15)
+class PeakSet(object):
     
-        for i in self.peaks:
-            
-            row_to_be_checked = i[2]
-            
-            #Remove peaks from the list that fall outside of this range
-            
-            if row_to_be_checked > comparible_up or row_to_be_checked < comparible_down:
-                
-                    self.peaks.remove(i)
-    
-    '''
-    From this point down to the start of the peakset class I belive are empty/useless methods
-    
-    So lets leave them un commented for now as to not waste my time
-    '''
-    
-    def find_same_anchors(self,first_anchor_obj, second_anchor_obj):
-        '''
-        Parameters
-        ----------
-        first_anchor_obj : list of filtered peaks (filtered for m/z and rt)
-        second_anchor_obj : list of filtered peaks (filtered for m/z and rt)
-        DESCRIPTION: This will loop through both of the filtered anchors provided and find
-        Any anchors that are the same
-        Since there are naturally occuring differences each time for the same feature a buffer of 0.00005 is allowed
-        Returns
-        -------
-        2 lists that have the same anchors between each file
-        '''
-    
-        buffer = 0.00015
-        #Create list variable for storing the same anchors
-        
-        common_anchors_1 = []
-        common_anchors_2 = []
-        
-        for i in first_anchor_obj.peaks:
-            for j in first_anchor_obj.peaks:
-                
-                #Set the acceptable range
-                
-                upper_difference_range = j[1] + buffer
-                lower_difference_range = j[1] - buffer
-                
-                if i[1] == j[1] or i[1] <= upper_difference_range and i[1] >= lower_difference_range:
-                    common_anchors_1.append(i)
-                    common_anchors_2.append(j)
-    
-        return common_anchors_1, common_anchors_2
-    
-    #Now I want to make a function that'll append the list of both anchors, filtering out any repeats between the 2 lists
-        
-    def anchors_combined(self,anchors_list1, anchors_list2):
-        '''
-        Parameters
-        ----------
-        anchors_list1 : anchor list
-        anchors_list2 : anchor list
-        DESCRIPTION: Intended to be used after anchor lists have been compiled, from there
-        it will filter through the lists and combine them into one. In the process it'll look for
-        The same peaks within the new list and remove them'
-        Returns
-        -------
-        List of combined peaks with doublers removed
-    
-        '''
-        
-        #Empty variable to be filled and returned at the end
-        
-        anchors_complete = []
-        
-        #Loops to fill the list above with the values from both lists in the argument
-        
-        for i in anchors_list1:
-            anchors_complete.append(i)
-            
-        for j in anchors_list2:
-            anchors_complete.append(j)
-    
-        #Loop to go through and check for the same peaks
-            
-        #repeats = find_same_anchors(anchors_list1, anchors_list2)
-        
-        #Counter variable to itterate in the loop
-    
-        counter = 0
-    
-        for row in anchors_complete:
-            
-            #The m/z is at the second index so create a  variable to check it
-            
-            mz_comparison = row[1]
-            
-            #Another loop to go through the list of repeats created above
-            
-            #for value in repeats:
-                
-                #If the m/z value in repeats is found in the complete anchor list then it is removed 
-                
-                #if mz_comparison == value:
-                    
-                    #anchors_complete.pop(counter)
-            
-            #Itterate counter so that the appropriate list index is deleted 
-            
-            counter +=1
-            
-        return anchors_complete        
-    
-class PeakSet(Peak):
-    
-    def __init__(self, file_path):
+    def __init__(self, peak, matched):
         
         '''
         Parameters
         ----------
-        file_path: the file path to a file of picked peaks, expected format is .csv
-        DESCRIPTION: This constructor will parse through the file and create a list attribute
-        where each index in the list represents all the information that correspond to a single peak
-        i.e m/z, rt, hegiht ect...
+        peak: peak obj
+        matched: boolean
+        DESCRIPTION: This constructor will create peakset objects- which are defined 
+        by the arguments passed to the constructor
         -------
         '''
         
-        super().__init__(file_path)
+        self.peak = peak
+        self.matched = matched
         
-    #Works exactly the same way as the most_sig_peaks function in the peak class
+    def get_peak(self):
+        
+        return self.peak
+        
+    def is_matched(self):
+        
+        return self.matched
+   
+    #Found problem so can remove these methods
     
-    def cut_off(self, value, alter_object):
-        
-        '''
-        Parameters
-        ----------
-        value: int/double- the cut off intensity value
-        alter_object: boolean, if true it will alter the peak list attribute of the object,
-        if false, it returns a new list
-        DESCRIPTION: The function will loop through the provided peak list and remove any peaks that are 
-        bellow the intensity value that is provided in the argument. 
-        -------
-        '''
-        
-        super().most_sig_peaks(value, alter_object)
-        
-        
     '''
     This is far from ideal but having to have this method to filter through and remove
     repeated values in a list as the match_peaks method bellow keeps producing duplicates
@@ -433,7 +75,7 @@ class PeakSet(Peak):
     repeated values in them
     '''
     
-    def remove_repeate(self):
+    def remove_repeate(peak_list):
         
         '''
         Parameters
@@ -449,23 +91,22 @@ class PeakSet(Peak):
         
         #The not in part of the nested for loop ensures that we only get unique values in the list
         
-        for i in self.peaks: 
+        for i in peak_list: 
             if i not in unique_values: 
                 unique_values.append(i)
         
         #Reassign the value of the list attribute to the list produced in the function        
         
-        self.peaks = unique_values
+        return unique_values
         
     '''
-    The buffer value in match_peaks seems to be too generous and because of this it allows
-    For differing values between the 2 files, it may be entirely possible that its just that one
-    file has more of the same metabolite than the other but then again im not sure if thats possible
+    If an intensity cut off is provdied for the peak lists it can produce differing
+    numbers between the matched peaks
     
     So I'm gonna have to write a new function bellow to make the 2 the same size
     '''
     
-    def make_same_size(self,another_peak_set_obj):
+    def make_same_size(peak_list,another_peak_list):
         
         '''
         Parameters
@@ -480,21 +121,21 @@ class PeakSet(Peak):
         #This method is called in another method regardless, so this conditional will 
         #Only activate if the resultant peakset lists are a different lenth
         
-        if len(self.peaks) != len(another_peak_set_obj.peaks):
+        if len(peak_list) != len(another_peak_list):
             
             #First conditional matches the length to the second peak object if its the samller one
             
-            if len(self.peaks) > len(another_peak_set_obj.peaks):
+            if len(peak_list) > len(another_peak_list):
                 
                 #Variable to store the length of the list, this will be the desired size we want
                 
-                value = len(another_peak_set_obj.peaks)
+                value = len(another_peak_list)
                 
                 #Empty list variable to append
                 
                 same_size = []
                 
-                for i in self.peaks:
+                for i in peak_list:
                 
                     same_size.append(i)
                 
@@ -506,51 +147,71 @@ class PeakSet(Peak):
                 #Make the peakset list attribute equal to the new variable
                 #so they will be the same size as the other objects list attribute    
                     
-                self.peaks = same_size
+                return same_size
              
             #The steps in the else condition bellow are exactly the same as above but for if the 
             #the other peak objects list attribute is larger
              
             else:
                 
-                value = len(self.peaks)
+                value = len(peak_list)
                 
                 same_size = []
                 
-                for i in another_peak_set_obj.peaks:
+                for i in another_peak_list:
                 
                     same_size.append(i)
                 
                     if len(same_size) == value:
                         break
-                another_peak_set_obj.peaks = same_size
-                
+                    
+                return same_size
+    
+    #I think this method is broken in the sense that when matching peaks, it is
+    #Including the same peak multiple times, need to debug
+    #Comment made on 18/06
 
-    def match_peaks(self, another_peak_set_obj):
+    def find_peaksets(peakset_list, another_peakset_list, return_unmatched):
         '''
         Parameters
         ----------
-        self : Peak set object
-        peak_set_obj2 : Another peak set object to compare to the first
+        peakset_list : list of peaks from a file
+        peak_set_obj2 : list of peaks from a different file
+        return_unmatched: Boolean, if true the unmatched peaksets will also be returned
         DESCRIPTION: This function loops through both peak lists attributes 
         and finds peaks that are the same on the basis of their m/z.
-      
+        Returns
+        -------
+        2 lists of matched peakset objects, one per file provided.
+        
+        If return_unmatched is True 3 lists will be returned, matched from first
+        list in the argument, matched from second list in argument and unique peakset
+        objects from both files respectively. 
         '''
         
         '''
         How are we defining that the peaks in the 2 files are the same?
         On average the m/z of the same peak in 2 filles differs by ~0.000143
-        For RT the average difference is 0.04
+        For RT the average difference (minutes) is 0.04
         '''
         
         #Buffer value for the mz
         
         buffer = 0.00015
         
-        #A place to store the matched peaks in both the files
+        #A place to store the matched peakset object in both the files
         
         matched_first = []
         matched_second = []
+        
+        #Storing information to check for unique peaks
+        
+        unmatched_comp_first = []
+        unmatched_comp_second = []
+        
+        #Store unique peaksets
+        
+        unique = []
         
         '''
         A nested for loop to goes through and check all values in the peak list 
@@ -558,38 +219,106 @@ class PeakSet(Peak):
         Then for whatever is left check the RT to filter further
         ''' 
         
-        for i in self.peaks:
-            for j in another_peak_set_obj.peaks:
+        for i in peakset_list:
+            for j in another_peakset_list:
                 
-                #The m/z value is stored at the second index in the files
+                #The m/z value is stored at the 0th index in the files
                 
-                upper_diff = j[1] + buffer
-                lower_diff = j[1] - buffer
+                upper_diff = j.get_mz() + buffer
+                lower_diff = j.get_mz() - buffer
                 
                 #If they fall within this range then its a match, append them to the lists
                 
-                if i[1] <= upper_diff and i[1] >= lower_diff:
+                if i.get_mz() <= upper_diff and i.get_mz() >= lower_diff:
                     
-                    matched_first.append(i)
-                    matched_second.append(j)
+                    '''
+                    Make Peakset objects, since they match the boolean will be True
+                    mz is at the 0th index, rt the 1st and height is at the 2nd
+                    '''
+                    
+                    new_peakset = PeakSet(i, True)
+                    new_peakset2 = PeakSet(j, True)
+                    
+                    #Store these objects in lists to be returned at the end
+                    
+                    matched_first.append(new_peakset)
+                    matched_second.append(new_peakset2)
+                    
+                    #Store the information from the peak file so they can be compared to find unmatched peaksets
+                    
+                    unmatched_comp_first.append(i)
+                    
+                    unmatched_comp_second.append(j)
         
-        #Update the objects lists to reflect what is matched
+        #If the boolean is false dont calculate unqiue peaks
+                    
+        if return_unmatched == False:            
         
-        self.peaks = matched_first
-        another_peak_set_obj.peaks = matched_second
+            PeakSet.remove_repeate(matched_first)
+            PeakSet.remove_repeate(matched_second)
+            PeakSet.make_same_size(matched_first, matched_second)
+            return matched_first, matched_second
         
-        #The step above is producing repeated values in the list so this method will remove those
+        #If it is True then calculate unique peaksets
         
-        self.remove_repeate()
-        another_peak_set_obj.remove_repeate()
+        else:
+            
+            '''
+            The unqie peaksets are calculated by looping over the lists that contain information
+            from the file that correspond to matched peak sets i.e their m/z, rt and height
+            These are not objects yet though 
+            
+            So these loops simply check to see if i (which represents a peak in the .csv file)
+            is not in the list that corresponds to peaks that match- if it isn't the information
+            from i is used to create new peakset objects, these objects are then placed into
+            a list
+            '''
+            
+            #This little section of code definietly works as it should,
+            #This means that the odd numbers must defineitly be coming from
+            #Repeated values in the unmatched_comp lists
+            
+            for i in peakset_list:
+                
+                if i not in unmatched_comp_first:
+                    
+                    #Create peakset object
+                    
+                    unique_peakset1 = PeakSet(i, False)
+                    
+                    #Place peakset object into a list
+                    
+                    unique.append(unique_peakset1)
+            
+            #Process is repeated but for the secon file provided and its matched peaks        
+            
+            print("length of unique after the first file is", len(unique))
+            
+            for j in another_peakset_list:
+                 
+                
+                if j not in unmatched_comp_second:
+                    
+                    #Create peakset object
+                                    
+                    unique_peakset2 = PeakSet(j, False)
+                    
+                    #Place peakset object into the unique list
+                                        
+                    unique.append(unique_peakset2)      
+            
+            #Return all 3 lists  
+            PeakSet.remove_repeate(matched_first)
+            PeakSet.remove_repeate(matched_second)
+            PeakSet.make_same_size(matched_first, matched_second)
+            return matched_first, matched_second, unique
+     
         
-        #Make them the same
-        
-        self.make_same_size(another_peak_set_obj)
-    
-    #I dont feel like this step is entirely necessary to be honest, may not be worth fixing
-    #Though I have figured out that the primary probelm is in the buffer value, its way too high
-    #So thats why I'm getting so many damn peaks
+    '''                
+    I dont know if this step is entirely necessary to be honest, may not be worth fixing
+    Though I have figured out that the primary probelm is in the buffer value, its way too high
+    So thats why the number of peaks is too high, need a better way to compare them
+    '''
     
     def match_peaks_rt_step(self, another_peak_set_obj):
         '''
@@ -628,8 +357,8 @@ class PeakSet(Peak):
         #Update the objects lists to reflect what is matched
         
         self.peaks = matched_first
-        another_peak_set_obj.peaks = matched_second    
-
+        another_peak_set_obj.peaks = matched_second  
+        
 import matplotlib.pyplot as plt
 
 class Plotter:
@@ -708,7 +437,7 @@ class Plotter:
         
     #Function to extract the RT from the OBJECTS and convert them into seconds
      
-    def rt_extract_convert(self):
+    def rt_extract_convert(peak_obj_list):
         '''
         Parameters
         ----------
@@ -721,21 +450,37 @@ class Plotter:
         -------
         List of RT in seconds
         '''
-        #Function laready exists from earlier to get rt so use it here
-        
-        new_rt = Peak.get_rt(self)
-        
         #Convert these values into seconds since they're currently in minutes
         
         rt_converted = []
         
-        for i in new_rt:
-                      
-            rt_convert = i *60
+        #Check if it is a peak or peakset obj list
         
-            rt_converted.append(rt_convert)
+        flag = isinstance(peak_obj_list[0], Peak)
+        
+        #if it is then do the following
+        
+        if flag:
+        
+            for i in peak_obj_list:
+                          
+                rt_convert = i.get_rt() *60
             
-        return rt_converted
+                rt_converted.append(rt_convert)
+                
+            return rt_converted
+        
+        #If it isnt a peak then it must be a peakset, needs slight alteration when grabbing rt
+        
+        else:
+            
+            for i in peak_obj_list:
+                          
+                rt_convert = i.get_peak().get_rt() *60
+            
+                rt_converted.append(rt_convert)
+                
+            return rt_converted
     
             
     def rt_minus_rt_plot(rt_list_1, rt_list_2):
@@ -749,11 +494,3 @@ class Plotter:
             difference.append(i - j)
             
         return difference
-           
-           
-           
-           
-           
-    
-           
-    
