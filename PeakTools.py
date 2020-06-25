@@ -5,26 +5,35 @@ Created on Mon Jun 22 14:24:53 2020
 @author: Don Haughton
 """
 
+import statistics
+
 class Peak(object):
     
-    def __init__(self, mz, rt, intensity):
+    def __init__(self, key, mz, rt, intensity, file):
         
         '''
         Parameters
         ----------
+        key: int
         mz: float
         rt: float
         intensity: float
+        file: string
         DESCRIPTION: This constructor will create peak objects- which are defined by the 3 
         arguments passed to the constrcutor
         -------
         '''
-        
+        self.id = key
         self.mz = mz
         self.rt = rt
         self.intensity = intensity
+        self.file = file
     
     #Getters to be used to get specific access to the peak objects attributes
+    
+    def get_id (self):
+        
+        return self.id
     
     def get_mz(self):
         
@@ -37,32 +46,210 @@ class Peak(object):
     def get_intensity(self):
         
         return self.intensity
-            
+    
+    def get_file(self):
+        
+        return self.file      
        
 class PeakSet(object):
     
-    def __init__(self, peak, matched):
+    def __init__(self, peak_list):
         
         '''
         Parameters
         ----------
-        peak: peak obj
-        matched: boolean
+        peak_list: list of peak objects that have similar mz and rt
         DESCRIPTION: This constructor will create peakset objects- which are defined 
         by the arguments passed to the constructor
         -------
         '''
+       
+        self.mz = PeakSet.avg_mz(peak_list)
+        self.rt = PeakSet.avg_rt(peak_list)
+        self.intensity = PeakSet.avg_intensity(peak_list)
+        self.number_of_peaks = len(peak_list)
+        self.peaks = peak_list
+      
+    '''    
+    A peakset needs to have an mz, rt..ect value same as a peak
+    These are calculated by taking the average ofsaid values that make up the
+    peakset
+    '''    
+    def avg_mz(peak_list):
         
-        self.peak = peak
-        self.matched = matched
+        #empty variable to be used to calculate the average
         
-    def get_peak(self):
+        mz_list = []
         
-        return self.peak
+        #loop over the peaks in the list and extract the mz values
         
-    def is_matched(self):
+        for peak in peak_list:
+            
+            mz = peak.get_mz()
+            
+            mz_list.append(mz)
         
-        return self.matched
+        #Calculate the mean from this list and return it
+        
+        average_mz = statistics.mean(mz_list)
+        
+        return average_mz
+    
+    def avg_rt(peak_list):
+        
+        #empty variable to be used to calculate the average
+        
+        rt_list = []
+        
+        #loop over the peaks in the list and extract the mz values
+        
+        for peak in peak_list:
+            
+            rt = peak.get_rt()
+            
+            rt_list.append(rt)
+        
+        #Calculate the mean from this list and return it
+        
+        average_rt = statistics.mean(rt_list)
+        
+        return average_rt
+    
+    def avg_intensity(peak_list):
+        
+        #empty variable to be used to calculate the average
+        
+        intensity_list = []
+        
+        #loop over the peaks in the list and extract the mz values
+        
+        for peak in peak_list:
+            
+            intensity = peak.get_intensity()
+            
+            intensity_list.append(intensity)
+        
+        #Calculate the mean from this list and return it
+        
+        average_intensity = statistics.mean(intensity_list)
+        
+        return average_intensity
+    
+    #Align the peaks into lists of peaks that have similar mz and rt
+    
+    def align(peak_obj_list, another_peak_obj_list):
+        
+        '''
+        Parameters
+        ----------
+        NOTE: Both lists should be sorted by intensity in reverse order
+        peak_obj_list : List of peak objects from a file
+        another_peak_obj_list : List of peak objects from another file
+        Description: This method will form pseudo peaksets by matching the peaks
+        between the 2 files into a list and appending said list to another list
+        This list of lists can then be used to create peakset objects
+        Returns
+        -------
+        List of peakset lists
+        '''
+        
+        #Empty list to contain peakset lists
+        
+        list_of_lists = []
+        
+        '''
+        These 2 buffer variables constitiue the avg differences between mz and
+        rt respectively, these were caluclated by taking the mean of the top 10
+        most intense peaks in the file
+        '''
+
+        mz_buffer = 0.00015
+        rt_buffer = 0.08
+        
+        '''
+        loop over every peak in the first list, comparing it to every peak in the 
+        second list, if they fall within an acceptable range- dictated by the upper
+        and lower tolerances set by the buffers, then its used to created a new peakset list
+        
+        once the first peak in the first file has been comapred to all peaks in the second file
+        the next peak is checked and this process continues until all peaks have been compared
+        and peakset lists are created.
+        
+        in the list bellow, i and j both represent peaks
+        '''
+        for i in peak_obj_list:
+            
+            #peakset list
+        
+            peakset = []
+            
+            #mz tolerances
+            
+            upper_mz_tolerance = i.get_mz() + mz_buffer
+            lower_mz_tolerance = i.get_mz() - mz_buffer
+            
+            #rt tolerances
+            
+            upper_rt_tolerance = i.get_rt() + rt_buffer
+            lower_rt_tolerance = i.get_rt() - rt_buffer
+            
+            #If there are no matches it will always contain itself so add it to peakset list NOW
+            
+            peakset.append(i)
+            
+            for j in another_peak_obj_list:
+                
+                
+                
+                #Get the mz and rt to compare to the peak in the first list
+                
+                mz = j.get_mz()
+                rt = j.get_rt()
+                
+                #Make some boolean variables comparing the mz and rt to the tolerances 
+                
+                mz_comp = mz >= lower_mz_tolerance and mz <= upper_mz_tolerance
+                rt_comp = rt >= lower_rt_tolerance and rt <= upper_rt_tolerance
+                
+                #If both comp variables are true then it'll add it to the peakset list
+                
+                if mz_comp == True and rt_comp == True:
+                    
+                    peakset.append(j)
+            
+            #Previously I had this inside the if statement but it was producing very large results- not sure if
+            #It makes sense having it here but it does give a nice number- will investigate later
+            
+            list_of_lists.append(peakset)
+                
+        return list_of_lists
+    
+    def make_peaksets(list_of_pseudo_peaksets):
+        '''
+        Parameters
+        ----------
+        list_of_pseudo_peaksets : output from the align method
+        DESCRIPTION: loops through the list of lists provided and creates
+        peakset objects from this
+        Returns
+        -------
+        List of peakset objects
+        '''
+  
+        #Empty list variable to return at the end
+
+        peakset_list = []
+
+        for i in list_of_pseudo_peaksets:
+
+            #each index in this list will be a list of peaks, this is the only argument we
+            #need to make peakset objs, the peakset init method does the rest              
+            
+            ps = PeakSet(i)
+            
+            peakset_list.append(ps)
+            
+        return peakset_list
    
     #Found problem so can remove these methods
     
@@ -549,12 +736,9 @@ class Plotter:
             
             #simply append the subtraction value to the empty list created earlier
             
-<<<<<<< HEAD
+
             difference.append(i - j)
         
         #Return the list of differences    
         
         return difference
-=======
-        return difference
->>>>>>> fffc652c48a3d42337693a08cb274ddb44a2623d
