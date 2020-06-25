@@ -476,7 +476,122 @@ class PeakSet(Peak):
         
         self.peaks = matched_first
         another_peak_set_obj.peaks = matched_second  
+
+import matplotlib.pyplot as plt
+
+class Plotter:
+    
+    def __init__(self, x, y, title, xtitle, ytitle, show_lobf):
         
+        '''
+        Parameters
+        ----------
+        x : list of values to be plotted
+        y : list of values to be plotted
+        title: title for the plot
+        xtitle: x-axis title
+        ytitle: y-axis title
+        show_lobf: boolean: if true a line of best fit will be plotted with the plot
+        DESCRIPTION: uses the 2 variables to produce a scatter plot
+        Returns
+        -------
+        Scatter plot
+        '''
+        #Variables for plot
+
+        colors = [[0,0,0]]
+        
+        #Get line of best fit
+        
+        self.a,self.b = 0.0, 0.0
+    
+        # Plot
+        
+        plt.scatter(x, y, c=colors, alpha=1)
+        
+        #Calls the best_fit function to plot the line of best fit if true
+        
+        if show_lobf == True:
+        
+            yfit = [self.a + self.b * xi for xi in x]
+            plt.plot(x, yfit)
+        
+        #Assigning the arguments to the plot    
+        
+        plt.title(title)
+        plt.xlabel(xtitle)
+        plt.ylabel(ytitle)
+        plt.show()
+        
+        
+    def best_fit(self,x, y):
+        '''
+        Parameters
+        ----------
+        X : list
+        Y : a different list
+        DESCRIPION: takes 2 list variables that are passed in the arguments
+        and calculates the paramaters necessary to plot the line of best fit
+        Returns
+        -------
+        The mx and c values that would be in the 
+        y= mx+c equation (straight line equation)
+        '''
+    
+        xbar = sum(x)/len(x)
+        ybar = sum(y)/len(y)
+        n = len(x) # or len(y)
+    
+        numer = sum([xi*yi for xi,yi in zip(x, y)]) - n * xbar * ybar
+        denum = sum([xi**2 for xi in x]) - n * xbar**2
+    
+        b = numer / denum
+        a = ybar - b * xbar
+    
+        print('best fit line:\ny = {:.2f} + {:.2f}x'.format(a, b))
+        
+        self.a = a
+        self.b = b
+        
+    #Function to extract the RT from the OBJECTS and convert them into seconds
+     
+    def rt_extract_convert(peak_obj_list):
+        '''
+        Parameters
+        ----------
+        self : peak, peakset or anchor object
+        DESCRIPTION: This will loop over the list attribute in the object,#
+        extracting the RT values into a sepearate list
+        These will be converted to seconds (as mzMINE represent RT in minutes) 
+        prior tO being placed into the new list.
+        Returns
+        -------
+        List of RT in seconds
+        '''
+        #Convert these values into seconds since they're currently in minutes
+        
+        rt_converted = []
+        
+        for i in peak_obj_list:
+                      
+            rt_convert = i.get_rt() *60
+        
+            rt_converted.append(rt_convert)
+            
+        return rt_converted
+    
+            
+    def rt_minus_rt_plot(rt_list_1, rt_list_2):
+        
+        difference = []
+        
+        zip_obj = zip(rt_list_1, rt_list_2)
+        
+        for i, j in zip_obj:
+            
+            difference.append(i - j)
+            
+        return difference        
         
 #Test the above transformed classes before transferring to proper File to store peak classes 
         
@@ -502,18 +617,38 @@ sig2 = UsefulMethods.most_sig_peaks(matched2, 5e6)
 print("Peaks from sig1", len(sig1))
 print("Peaks from sig2", len(sig2)) 
 
-#For some reason its saying peakset doesnt have attribute height, even though it does, so it wont sort
-#RT and mz work though so thats good
+same = PeakSet.make_same_size(sig1, sig2)
 
-sig1 = UsefulMethods.sort_peaks(sig1, "mz", False)
-
-for i in sig1[:6]:
-    
-    print(i.get_mz())
+print("Peaks after same same", len(same))
 #print("There are repeated values in the macthed list 1", UsefulMethods.find_repeats(matched1))
 #print("There are repeated values in the macthed list 2", UsefulMethods.find_repeats(matched2))
 
+#Tested and the MakeAnchors interface is up and running
 
+import MakeAnchors as ma
+
+anch1 = ma.filter_mz(matched1, 5e7)
+
+print(len(anch1))
+
+anch1 = UsefulMethods.most_sig_peaks(anch1, 5e6)
+
+print(len(anch1))
+
+anch1 = ma.filter_rt(anch1)
+
+print(len(anch1))
+
+multi1_rt = Plotter.rt_extract_convert(sig1)
+multi2_rt = Plotter.rt_extract_convert(sig2)
+
+rt_minus = Plotter.rt_minus_rt_plot(multi1_rt, multi2_rt)
+
+print(multi1_rt[:5])
+print(multi2_rt[:5])
+print(rt_minus[:5])
+
+Plotter(multi1_rt, rt_minus, "Test", "", "", False)
 
 '''
 End of work note (18/06)
