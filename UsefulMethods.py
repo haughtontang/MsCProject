@@ -46,13 +46,14 @@ def peak_creator (file_path):
         
         #Now that I know the types and the data lets format it
         
-        mz = float(row[0])
-        rt = float(row[1])
-        height =  float(row[2])
+        key = int(row[0])
+        mz = float(row[1])
+        rt = float(row[2])
+        height =  float(row[3])
         
         #Now that its properly formatted as the proper type put it into a list
         
-        peaks.append(Peak(mz, rt, height))
+        peaks.append(Peak(key, mz, rt, height, file_path))
         
     return peaks
 
