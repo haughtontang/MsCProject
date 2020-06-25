@@ -222,7 +222,7 @@ class PeakSet(object):
         for i in peakset_list:
             for j in another_peakset_list:
                 
-                #The m/z value is stored at the 0th index in the files
+                #use getter to extraxt mz from peak object and store this in seperate variable with the buffer
                 
                 upper_diff = j.get_mz() + buffer
                 lower_diff = j.get_mz() - buffer
@@ -233,7 +233,6 @@ class PeakSet(object):
                     
                     '''
                     Make Peakset objects, since they match the boolean will be True
-                    mz is at the 0th index, rt the 1st and height is at the 2nd
                     '''
                     
                     new_peakset = PeakSet(i, True)
@@ -253,10 +252,13 @@ class PeakSet(object):
         #If the boolean is false dont calculate unqiue peaks
                     
         if return_unmatched == False:            
-        
+            
+            #These remove repeats and make same size methods are just work arounds for the probelm
+            
             PeakSet.remove_repeate(matched_first)
             PeakSet.remove_repeate(matched_second)
             PeakSet.make_same_size(matched_first, matched_second)
+            
             return matched_first, matched_second
         
         #If it is True then calculate unique peaksets
@@ -307,10 +309,16 @@ class PeakSet(object):
                                         
                     unique.append(unique_peakset2)      
             
-            #Return all 3 lists  
+            
+            
+            #These remove repeats and make same size methods are just work arounds for the probelm
+            
             PeakSet.remove_repeate(matched_first)
             PeakSet.remove_repeate(matched_second)
             PeakSet.make_same_size(matched_first, matched_second)
+            
+            #Return all 3 lists
+            
             return matched_first, matched_second, unique
      
         
@@ -541,8 +549,12 @@ class Plotter:
             
             #simply append the subtraction value to the empty list created earlier
             
+<<<<<<< HEAD
             difference.append(i - j)
         
         #Return the list of differences    
         
         return difference
+=======
+        return difference
+>>>>>>> fffc652c48a3d42337693a08cb274ddb44a2623d
