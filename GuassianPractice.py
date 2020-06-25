@@ -18,8 +18,8 @@ multi2 = um.peak_creator('reduced_multi_2_full.csv')
 
 #Sort by intensity
 
-multi1 = um.sort_peaks(multi1, "intensity", True)
-multi2 = um.sort_peaks(multi2, "intensity", True)
+multi1.sort(key = lambda x: x.intensity)
+multi2.sort(key = lambda x: x.intensity)
 
 #Get the most sig peaks
 
@@ -31,6 +31,7 @@ matched1, matched2 = pt.find_peaksets(multi1, multi2, False)
 print(len(matched1))
 print(len(matched2))
 
+matched1, matched2 = pt.match_peaks_rt_step(matched1, matched2)
 
 multi1_rt = plot.rt_extract_convert(matched1)
 multi2_rt = plot.rt_extract_convert(matched2)
@@ -69,11 +70,17 @@ Y = rt_minus
 X = np.array(multi1_rt).reshape(len(multi1_rt),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
-kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=1.)
+#Increase the lengthscale to improve the gp so it can learn something
+
+#100 is probably a bit too high but it does give a much nice shape- will investigate later
+
+kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=100.)
 
 m = GPy.models.GPRegression(X,Y, kernel = kernel)
 
-m.optimize_restarts(num_restarts=8)
+#Ruining gp so comment out for now
+
+#m.optimize_restarts(num_restarts=8)
 
 m.plot()
 

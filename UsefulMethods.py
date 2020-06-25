@@ -117,76 +117,16 @@ def most_sig_peaks(peak_obj_list, value):
             
             return sig_peaks
     
-#Sort peak object in descending of index passed to the argument
-    
-def sort_peaks(peak_obj_list, sort_by, reverse_order):
-    
-    '''
-    Parameters
-    ----------
-    peak_obj_list: list of peak objects
-    sort_by: string- options can be mz, rt or height
-    reverse_order: Boolean - True puts the list in descending order and false in ascending order
-    DESCRIPTION: The function will sort the peak list attribute of the peak object by the 
-    Index that is passed to the argument.
-    -------
-    '''
-    
-    sort_key = attrgetter(sort_by)
-    
-    sorted_list = sorted(peak_obj_list, key = sort_key, reverse = reverse_order)
-    
-    return sorted_list
 
 #Not sure if my matched peaks are 100% accurate, so this method will check to see if there are any duplicates
 
-def find_repeats(peakset_obj_list):
-    mz_comp = []
-    rt_comp = []  
-    height_comp = []  
-    matched_comp = []  
-    for i in peakset_obj_list:
-        
-        mz = i.get_mz()
-        rt = i.get_rt()
-        inten = i.get_height()
-        matched = i.is_matched()
-        
-        mz_comp.append(mz)
-        rt_comp.append(rt)
-        height_comp.append(inten)
-        matched_comp.append(matched)
-
-    mz_len = len(mz_comp)
-    rt_len = len(rt_comp)
-    height_len = len(height_comp)
-    matched_len = len(matched_comp)
+#def find_repeats(peakset_obj_list):
     
-    mz_s = len(set(mz_comp))
-    rt_s = len(set(rt_comp))
-    height_s = len(set(height_comp))
-    matched_s = len(set(matched_comp))
     
-    mz_b = mz_len == mz_s
-    rt_b = rt_len == rt_s
-    height_b = height_len == height_s
-    matched_b = matched_len == matched_s
-    
-    if mz_b == True and rt_b == True and height_b == True and matched_b == True:
         
-        return False
-    else:
         
-        return True
 
-#Bellow is nothing more than a test of techniques and methods
 
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 19 14:52:45 2020
-
-@author: Don Haughton
-"""
 
 
 #Test for the unqiue peakset finding part of the find_peakset method in peakset2.0
