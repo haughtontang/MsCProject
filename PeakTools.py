@@ -162,7 +162,7 @@ class PeakSet(object):
         rt respectively, these were caluclated by taking the mean of the top 10
         most intense peaks in the file
         '''
-
+    
         mz_buffer = 0.00015
         rt_buffer = 0.08
         
@@ -177,11 +177,36 @@ class PeakSet(object):
         
         in the list bellow, i and j both represent peaks
         '''
-        for i in peak_obj_list:
+        
+        '''
+        #The largest list needs to be the first in the loop or else it'll produce an error when
+        calculating the mean av, rt ect downstream at the peakset creation stage as there will be null values
+        '''
+        
+        if len(peak_obj_list) > len(another_peak_obj_list):
+            
+            largest = peak_obj_list
+            smallest = another_peak_obj_list
+            
+        else:
+            
+            largest = another_peak_obj_list
+            smallest = peak_obj_list
+        
+        for i in largest:
             
             #peakset list
         
             peakset = []
+            
+            '''
+            Lists for those that dont match to be added to
+            Unique 1 for those in the largest list and unique 2 for those in the smaller list
+            We want them to be in seperate lists as they're not matched so we want to keep them seperate
+            '''
+            
+            unique1 = []
+            unique2 = []
             
             #mz tolerances
             
@@ -197,9 +222,9 @@ class PeakSet(object):
             
             peakset.append(i)
             
-            for j in another_peak_obj_list:
+            for j in smallest:
                 
-                
+                #unique2 = []
                 
                 #Get the mz and rt to compare to the peak in the first list
                 
@@ -214,14 +239,28 @@ class PeakSet(object):
                 #If both comp variables are true then it'll add it to the peakset list
                 
                 if mz_comp == True and rt_comp == True:
-                    
+                 
                     peakset.append(j)
+                
+                #If they dont list    
+                
+                else:
+                    unique1.append(i)
+                    unique2.append(j)
             
             #Previously I had this inside the if statement but it was producing very large results- not sure if
             #It makes sense having it here but it does give a nice number- will investigate later
             
             list_of_lists.append(peakset)
+            list_of_lists.append(unique1)
+            list_of_lists.append(unique2)
+        
+        for i in list_of_lists:
+            
+            if not list_of_lists:
                 
+                list_of_lists.remove(i)
+            
         return list_of_lists
     
     def make_peaksets(list_of_pseudo_peaksets):
@@ -647,7 +686,7 @@ class Plotter:
         '''
         Parameters
         ----------
-        self : peak, peakset or anchor object
+        peak_obj_list : peak or peakset object
         DESCRIPTION: This will loop over the list attribute in the object,#
         extracting the RT values into a sepearate list
         These will be converted to seconds (as mzMINE represent RT in minutes) 
@@ -655,6 +694,8 @@ class Plotter:
         Returns
         -------
         List of RT in seconds
+        NOTE: if peakset obj list is provided the number of lists returned
+        Will be the number of files that make up the peaksets
         '''
         #Convert these values into seconds since they're currently in minutes
         
@@ -686,19 +727,83 @@ class Plotter:
         
         else:
             
-            for i in peak_obj_list:
-                
-                #since its a peakset we need to get the peak before being able to get the rt
-                
-                rt_convert = i.get_peak().get_rt() *60
+            #Need to get the names of the files they came from to make lists to extract the rt into
             
-                #Add this converted time to a list
+            name_list = []
             
-                rt_converted.append(rt_convert)
+            #Loop over the peak objects in peakset and append their file names to the name list
+            
+            for obj in peak_obj_list:
+                
+                #Get access the peaks contained in the peakset
+                
+                for peak in obj.peaks:
+                    
+                    #extract the file the peak originated from
+                    
+                    file = peak.get_file()
+                    
+                    #Add it to the name list
+                    
+                    name_list.append(file)
+                    
+            #This will have lots of repeats so get those that are unique
+            
+            unique = list(set(name_list))
+            
+            num_of_files = len(unique)
+            
+            #THis will only work for 2 files, idealy id have like to make it comptatible to work with more
+            #But for now this will have to do
+            
+            #2 list variables to store the rts from each files
+            
+            rt_1 = []
+            rt_2 = []
+            
+            #Get access to the peakset objs in the list passed to the argument
+            
+            for obj in peak_obj_list:
+                
+                #Make a separate list variable for the peaks this peakset object contains
+                
+                peaks = obj.peaks
+                
+                #If this peakset has more than 1 peak we want to loop over this list to get the rts for each peak
+                
+                if obj.number_of_peaks > 1:
+                
+                    #loop over the peak list
+                    
+                    for i in peaks:
+                        
+                        #if the file name is equal to the first index of the name list then it came from the first file
+                        #So append it to rt list 1
+                        
+                        if i.get_file() == unique[0]:
+                            
+                            rt_1.append(i.get_rt() * 60)
+                        
+                        #If it doesnt equal that index, then its from the second file so append it to that list    
+                        
+                        else:
+                            
+                            rt_2.append(i.get_rt() *60)
+                
+                #This does the exact same as above but outside of the if statement that checks for peaksets containig 
+                #more than 1 peak i.e this will check for single peak peaksets
+                
+                if i.get_file() == unique[0]:
+                    
+                    rt_1.append(i.get_rt() * 60)
+                    
+                else:
+                    
+                    rt_2.append(i.get_rt() *60) 
              
             #return the list of conversions       
              
-            return rt_converted
+            return rt_1, rt_2
     
     '''
     Needed for plotting the guassian     
