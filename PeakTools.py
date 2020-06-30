@@ -179,7 +179,7 @@ class PeakSet(object):
         '''
         
         '''
-        #The largest list needs to be the first in the loop or else it'll produce an error when
+        The largest list needs to be the first in the loop or else it'll produce an error when
         calculating the mean av, rt ect downstream at the peakset creation stage as there will be null values
         '''
         
@@ -727,83 +727,79 @@ class Plotter:
         
         else:
             
-            #Need to get the names of the files they came from to make lists to extract the rt into
+            #Find out the original file, to do that I need to loop over all the peaksets and find all the unique file names
             
-            name_list = []
+            names =[]
             
-            #Loop over the peak objects in peakset and append their file names to the name list
-            
-            for obj in peak_obj_list:
+            for peakset in peak_obj_list:
                 
-                #Get access the peaks contained in the peakset
+                #loop over lists in peakset
                 
-                for peak in obj.peaks:
+                for peak in peakset.peaks:
                     
-                    #extract the file the peak originated from
+                    name = peak.get_file()
                     
-                    file = peak.get_file()
+                names.append(name)
+                
+            #make the names list only contain unique names
+            
+            names = list(set(names))
+            
+            '''
+            in the case of the multi beers we're working with 2 files so make 2 rt lists to append to
+            these will be returned at the end once they've been populated'
+            '''
+            
+            rt1 = []
+            rt2 = []
+            
+            '''
+            Since peaksets are dealing with lists of lists it can get complicated quite quikcly
+            Instead, this for loop bellow will extract all the peak objects in peaks set and
+            store them as a 1D list as thats easier to manipulate
+            '''
+            
+            peaks = []
+            
+            #loop over peakset objects
+            
+            for peakset in peak_obj_list:
+                
+                #loop over peak list attributes that are part of those objects
+                
+                for peak in peakset.peaks:
                     
-                    #Add it to the name list
+                    #Get the peaks in that list attribute and append it to this list
                     
-                    name_list.append(file)
+                    peaks.append(peak)
+            
+            #This method produces a lot of repeats so make the list only contain unique peak objects using set()
+            
+            peaks = list(set(peaks))
+            
+            #loop over this peak obj list and extract and convert their rt
+            
+            for peak in peaks:
+                
+                #Check the original file it came from and append it to a different list to maintain data integrity
+                
+                if peak.get_file() == names[0]:
                     
-            #This will have lots of repeats so get those that are unique
-            
-            unique = list(set(name_list))
-            
-            num_of_files = len(unique)
-            
-            #THis will only work for 2 files, idealy id have like to make it comptatible to work with more
-            #But for now this will have to do
-            
-            #2 list variables to store the rts from each files
-            
-            rt_1 = []
-            rt_2 = []
-            
-            #Get access to the peakset objs in the list passed to the argument
-            
-            for obj in peak_obj_list:
-                
-                #Make a separate list variable for the peaks this peakset object contains
-                
-                peaks = obj.peaks
-                
-                #If this peakset has more than 1 peak we want to loop over this list to get the rts for each peak
-                
-                if obj.number_of_peaks > 1:
-                
-                    #loop over the peak list
+                    rt = peak.get_rt() * 60
                     
-                    for i in peaks:
-                        
-                        #if the file name is equal to the first index of the name list then it came from the first file
-                        #So append it to rt list 1
-                        
-                        if i.get_file() == unique[0]:
-                            
-                            rt_1.append(i.get_rt() * 60)
-                        
-                        #If it doesnt equal that index, then its from the second file so append it to that list    
-                        
-                        else:
-                            
-                            rt_2.append(i.get_rt() *60)
+                    rt1.append(rt)
                 
-                #This does the exact same as above but outside of the if statement that checks for peaksets containig 
-                #more than 1 peak i.e this will check for single peak peaksets
+                #Same as ove but for if it came from a different file    
                 
-                if i.get_file() == unique[0]:
-                    
-                    rt_1.append(i.get_rt() * 60)
-                    
                 else:
                     
-                    rt_2.append(i.get_rt() *60) 
-             
-            #return the list of conversions       
-             
-            return rt_1, rt_2
+                    rt = peak.get_rt() * 60
+                    
+                    rt2.append(rt)
+            
+            #Return 2 lists of rt in seconds        
+            
+            return rt1, rt2
     
     '''
     Needed for plotting the guassian     
