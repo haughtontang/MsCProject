@@ -117,9 +117,10 @@ def align(peak_obj_list, another_peak_obj_list):
     We want them to be in seperate lists as they're not matched so we want to keep them seperate
     '''
     
-    peakset = []
-    unmatched_file1 = []
-    unmatched_file2 = []
+    matched_large = []
+    matched_small = []
+    unmatched_large = []
+    unmatched_small = []
     
     
     '''
@@ -169,20 +170,52 @@ def align(peak_obj_list, another_peak_obj_list):
             
             if mz_comp == True and rt_comp == True:
                 
-                peakset.append(i)
-                peakset.append(j)
-                list_of_lists.append(peakset)
-                peakset = []
- 
-        #If they dont match    
-        
-        else:
+                matched_large.append(i)
+                matched_small.append(j)
+                
+    for i in largest:
+        if i not in matched_large:
+            unmatched_large.append(i)
             
-            unmatched_file1.append(i)
-            list_of_lists.append(unmatched_file1)
-            unmatched_file1 = []
+    for i in smallest:
+        if i not in matched_small:
+            unmatched_small.append(i)
+    
+    print(len(matched_large))   
+    print(len(matched_small))  
+    print(len(unmatched_large))
+    print(len(unmatched_small))
+    
+    merged = []
+    
+    counter = 0
+    
+    for i in range(0, len(matched_large)):
+        
+        merged.append(matched_large[i])
+        merged.append(matched_small[i])
+        list_of_lists.append(merged)
+        merged = []
+
+    print("len of list of lists after combining matched1 and 2", len(list_of_lists))
+    
+    unmatched = []
+    
+    for i in unmatched_large:
+        
+        unmatched.append(i)
+        list_of_lists.append(unmatched)
+        unmatched = []
+        
+    for i in unmatched_small:
+        
+        unmatched.append(i)
+        list_of_lists.append(unmatched)
+        unmatched = []
         
         
+    
+    '''    
     double = []            
 
     for i in list_of_lists:
@@ -206,12 +239,13 @@ def align(peak_obj_list, another_peak_obj_list):
     #list_of_lists.append(peakset)
     #list_of_lists.append(unmatched_file1)
     #list_of_lists.append(unmatched_file2)
-    
+    '''
     return list_of_lists
 
 pps = align(p1,p2)
 print(len(pps))
 ps = ps.make_peaksets(pps)
+print("peaksetssssss",len(ps))
 
 '''
 EOW note 26/06: Good news is it works, bad news is doesnt work properly, getting way too many results
@@ -305,19 +339,20 @@ def rt_extract_convert(peak_obj_list):
         store them as a 1D list as thats easier to manipulate
         '''
         
+        matched = []
         peaks = []
-        
+        counter = 0
         #loop over peakset objects
         
         for ps in peak_obj_list:
             
-            if len(ps.peaks) < 2:
+            if ps.number_of_peaks != 1:
                 
-                peak_obj_list.remove(ps)
+                matched.append(ps)
                 
-        print("length after removing singlet peaksets", len(peak_obj_list))
+        print("length after removing singlet peaksets", len(matched))
         
-        for peakset in peak_obj_list:
+        for peakset in matched:
             
             #loop over peak list attributes that are part of those objects
             
@@ -326,11 +361,7 @@ def rt_extract_convert(peak_obj_list):
                 #Get the peaks in that list attribute and append it to this list
                 
                 peaks.append(peak)
-        
-        #This method produces a lot of repeats so make the list only contain unique peak objects using set()
-        
-        peaks = list(set(peaks))
-        
+            
         #loop over this peak obj list and extract and convert their rt
         
         for peak in peaks:
@@ -361,7 +392,7 @@ print(len(rt1),len(rt2))
         
 diff = plot.rt_minus_rt_plot(rt1, rt2)
 
-#plot(rt1,diff,"","","",False)
+plot(rt1,diff,"","","",False)
             
             
             
