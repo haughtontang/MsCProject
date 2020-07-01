@@ -6,7 +6,7 @@ Created on Fri Jun 12 14:42:58 2020
 """
 
 import GPy
-from PeakTools import PeakSet as pt
+from PeakTools import PeakSet as ps
 from PeakTools import Plotter as plot
 import UsefulMethods as um
 import numpy as np
@@ -26,37 +26,28 @@ multi2.sort(key = lambda x: x.intensity)
 multi1 = um.most_sig_peaks(multi1, 5e6)
 multi2 = um.most_sig_peaks(multi2, 5e6)
 
-matched1, matched2 = pt.find_peaksets(multi1, multi2, False)
+pps = ps.align(multi1, multi2)
 
-print(len(matched1))
-print(len(matched2))
+ps = ps.make_peaksets(pps)
 
-matched1, matched2 = pt.match_peaks_rt_step(matched1, matched2)
-
-multi1_rt = plot.rt_extract_convert(matched1)
-multi2_rt = plot.rt_extract_convert(matched2)
+multi1_rt, multi2_rt = plot.rt_extract_convert(ps)
 
 rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
 
 #print(rt_minus[:20])
 
 #Try the GP but for the anchors only
-'''
+
 import MakeAnchors as ma
 
-a1 = ma.filter_mz(matched1, 5e7)
-a2 = ma.filter_mz(matched2, 5e7)
+a1 = ma.filter_mz(ps, 5e7)
 
 a1 = ma.filter_rt(a1)
-a2 = ma.filter_rt(a2)
 
-a1 = pt.make_same_size(a1,a2)
-
-multi1_rt = plot.rt_extract_convert(a1)
-multi2_rt = plot.rt_extract_convert(a2)
+multi1_rt, multi2_rt = plot.rt_extract_convert(a1)
 
 rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
-'''
+
 import numpy as np
 
 X = multi1_rt

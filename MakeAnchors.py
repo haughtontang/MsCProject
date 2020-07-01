@@ -44,7 +44,7 @@ def filter_mz(list_of_peak_objs, sig_val):
     #Get the mz values for these very sig peaks
     
     for i in very_sig_peaks:
-        mz = i.get_peak().get_mz()
+        mz = i.mz
         mz_list.append(mz)
     
     #Calculate the avg of these m/z values and then allow a buffer of +/- 10% of that average
@@ -55,22 +55,26 @@ def filter_mz(list_of_peak_objs, sig_val):
     
     comparible_up = (average_mz /100 * 10) + average_mz 
     comparible_down = average_mz - (average_mz /100 * 10) 
-   
+    
+    #List of peaksets that pass the mz filter, append and return at the end
+    
+    mz_anchors = []
+    
     #Go through the list passd to the function and remove any values that dont fall within the upper and lower buffers
     
     for i in list_of_peak_objs:
         
         #Looking to compare m/z which is at the second index
         
-        row_to_be_checked = i.get_peak().get_mz()
+        row_to_be_checked = i.mz
         
         #If the m/z value doesnt fall between the upper and lower tolerances it is removed
         
-        if row_to_be_checked > comparible_up or row_to_be_checked < comparible_down:
+        if row_to_be_checked <= comparible_up and row_to_be_checked >= comparible_down:
                 
-            list_of_peak_objs.remove(i)
+            mz_anchors.append(i)
             
-    return list_of_peak_objs
+    return mz_anchors
             
                 
 def filter_rt(list_of_peak_objs):
@@ -96,7 +100,7 @@ def filter_rt(list_of_peak_objs):
     
     for i in list_of_peak_objs:
         
-        rt = i.get_peak().get_rt()
+        rt = i.rt
         
         rt_list.append(rt)
     
@@ -107,14 +111,18 @@ def filter_rt(list_of_peak_objs):
     comparible_up = rt_list[0] + (rt_list[0]/100 * 15)
     comparible_down = rt_list[0] - (rt_list[0]/100 * 15)
 
+    #List of anchors matching the rt step to be returned at the end
+    
+    rt_anchors = []
+
     for i in list_of_peak_objs:
         
-        row_to_be_checked = i.get_peak().get_rt()
+        row_to_be_checked = i.rt
         
         #Remove peaks from the list that fall outside of this range
         
-        if row_to_be_checked > comparible_up or row_to_be_checked < comparible_down:
+        if row_to_be_checked <= comparible_up and row_to_be_checked >= comparible_down:
             
-                list_of_peak_objs.remove(i)
+                rt_anchors.append(i)
                 
-    return list_of_peak_objs
+    return rt_anchors

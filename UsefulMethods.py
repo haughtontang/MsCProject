@@ -6,8 +6,6 @@ Created on Thu Jun 18 16:58:41 2020
 """
 
 import csv
-from operator import itemgetter
-from operator import attrgetter
 from PeakTools import Peak
 
 def peak_creator (file_path):
@@ -102,96 +100,18 @@ def most_sig_peaks(peak_obj_list, value):
         
         else:
             
-            for row in peak_obj_list:
+            for ps in peak_obj_list:
                 
-                #istore the intensity as a variable
+                #store the intensity as a variable
                 
-                intesnity = row.get_peak().get_intensity()
+                intesnity = ps.intensity
                 
                 if intesnity >= value:
                     
                     #Only stores the peaks that reach the condition of intensity
                     
-                    sig_peaks.append(row)
+                    sig_peaks.append(ps)
             
             #Return updated list of sig peaks    
             
             return sig_peaks
-    
-
-#Not sure if my matched peaks are 100% accurate, so this method will check to see if there are any duplicates
-
-#def find_repeats(peakset_obj_list):
-    
-    
-        
-        
-
-
-
-
-#Test for the unqiue peakset finding part of the find_peakset method in peakset2.0
-
-'''
-
-peakset_list = [1,2,3,4,5,6,7,8,9,10]
-
-unmatched_comp_first = [2,4,6,8,10]
-
-unique = []
-
-for i in peakset_list:
-                
-    if i not in unmatched_comp_first:
-        
-        #Create peakset object
-        
-        #unique_peakset1 = PeakSet(i[0],i[1],i[2], False)
-        
-        #Place peakset object into a list
-        
-        unique.append(i)
-        
-print(unique)
-'''
-#Testing the equlas method for objects
-
-#Just tsting comparing objects
-
-'''
-
-class Car:
-    
-    def __init__(self, colour, speed, doors):
-        
-        self.colour = colour
-        self.speed = speed
-        self.doors = doors
-        
-   
-car1 = Car("blue", 200, 3)
-car2 = Car("red", 230, 3)
-car3 = Car("blue", 200, 3)
-car4 = Car("white", 231, 2)
-
-
-#print(car4 == car5)
-
-car_list = [car1,car2,car3,car4]
-
-for i in enumerate(car_list[:-1]):
-    
-    print( i)
-
-#    if j  == car_list[i+1]: 
-        
- #       print("We have a repeat")
-        
-  #  else:
-        
-   #     print("No repeats")
-    
-'''
-
-
-
