@@ -138,7 +138,7 @@ class PeakSet(object):
     #Align the peaks into lists of peaks that have similar mz and rt
     
     def align(peak_obj_list, another_peak_obj_list):
-        
+            
         '''
         Parameters
         ----------
@@ -167,6 +167,32 @@ class PeakSet(object):
         rt_buffer = 0.08
         
         '''
+        #The largest list needs to be the first in the loop or else it'll produce an error when
+        calculating the mean mv, rt ect downstream at the peakset creation stage as there will be null values
+        The conditionals bellow will find the largest list amongst the arguments provided
+        '''
+    
+        if len(peak_obj_list) > len(another_peak_obj_list):
+            
+            largest = peak_obj_list
+            smallest = another_peak_obj_list
+            
+        else:
+            
+            largest = another_peak_obj_list
+            smallest = peak_obj_list
+            
+            
+        '''
+        Empty list variables to append to in the loops bellow
+        '''
+        
+        matched_large = []
+        matched_small = []
+        unmatched_large = []
+        unmatched_small = []
+         
+        '''
         loop over every peak in the first list, comparing it to every peak in the 
         second list, if they fall within an acceptable range- dictated by the upper
         and lower tolerances set by the buffers, then its used to created a new peakset list
@@ -178,60 +204,26 @@ class PeakSet(object):
         in the list bellow, i and j both represent peaks
         '''
         
-        '''
-        The largest list needs to be the first in the loop or else it'll produce an error when
-        calculating the mean av, rt ect downstream at the peakset creation stage as there will be null values
-        '''
-        
-        if len(peak_obj_list) > len(another_peak_obj_list):
-            
-            largest = peak_obj_list
-            smallest = another_peak_obj_list
-            
-        else:
-            
-            largest = another_peak_obj_list
-            smallest = peak_obj_list
-        
         for i in largest:
             
-            #peakset list
-        
-            peakset = []
+            #Get the mz and rt to compare to the peak in the first list
             
-            '''
-            Lists for those that dont match to be added to
-            Unique 1 for those in the largest list and unique 2 for those in the smaller list
-            We want them to be in seperate lists as they're not matched so we want to keep them seperate
-            '''
-            
-            unique1 = []
-            unique2 = []
-            
-            #mz tolerances
-            
-            upper_mz_tolerance = i.get_mz() + mz_buffer
-            lower_mz_tolerance = i.get_mz() - mz_buffer
-            
-            #rt tolerances
-            
-            upper_rt_tolerance = i.get_rt() + rt_buffer
-            lower_rt_tolerance = i.get_rt() - rt_buffer
-            
-            #If there are no matches it will always contain itself so add it to peakset list NOW
-            
-            peakset.append(i)
+            mz = i.get_mz()
+            rt = i.get_rt()
             
             for j in smallest:
                 
-                #unique2 = []
+                #mz tolerances
+            
+                upper_mz_tolerance = j.get_mz() + mz_buffer
+                lower_mz_tolerance = j.get_mz() - mz_buffer
                 
-                #Get the mz and rt to compare to the peak in the first list
+                #rt tolerances
                 
-                mz = j.get_mz()
-                rt = j.get_rt()
+                upper_rt_tolerance = j.get_rt() + rt_buffer
+                lower_rt_tolerance = j.get_rt() - rt_buffer
                 
-                #Make some boolean variables comparing the mz and rt to the tolerances 
+                #boolean variables comparing the mz and rt of all peaks in smallest to the tolerances in largest
                 
                 mz_comp = mz >= lower_mz_tolerance and mz <= upper_mz_tolerance
                 rt_comp = rt >= lower_rt_tolerance and rt <= upper_rt_tolerance
@@ -239,28 +231,101 @@ class PeakSet(object):
                 #If both comp variables are true then it'll add it to the peakset list
                 
                 if mz_comp == True and rt_comp == True:
-                 
-                    peakset.append(j)
-                
-                #If they dont list    
-                
-                else:
-                    unique1.append(i)
-                    unique2.append(j)
-            
-            #Previously I had this inside the if statement but it was producing very large results- not sure if
-            #It makes sense having it here but it does give a nice number- will investigate later
-            
-            list_of_lists.append(peakset)
-            list_of_lists.append(unique1)
-            list_of_lists.append(unique2)
+                    
+                    matched_large.append(i)
+                    matched_small.append(j)
         
-        for i in list_of_lists:
+        #Use the list of matched peaks to find the ones that didnt match            
+        
+        for i in largest:
             
-            if not list_of_lists:
+            #If it isn't in the matched list then it must be unmatched
+            
+            if i not in matched_large:
                 
-                list_of_lists.remove(i)
+                #Append it to the unmatched list
+                
+                unmatched_large.append(i)
+        
+        #Use the list of matched peaks to find the ones that didnt match                    
+        
+        for i in smallest:
             
+            #If it isn't in the matched list then it must be unmatched
+            
+            if i not in matched_small:
+                
+                #Append it to the unmatched list
+                
+                unmatched_small.append(i)
+    
+        '''
+        If the peaks match then they make up one peakset
+        The argument for a peakset is a list of peaks so the matched large and matched small
+        lists need to be combined together, the loop bellow will achieve this
+        '''
+    
+        #Empty merged list variable to append to
+    
+        merged = []
+        
+        for i in range(0, len(matched_large)):
+            
+            #Use the indexes to append them together, ie so the peak that are matched are in the list together
+            
+            merged.append(matched_large[i])
+            merged.append(matched_small[i])
+            
+            #Add this list to the list of lists- representing pseudo peaksets
+            
+            list_of_lists.append(merged)
+            
+            #Close the list so no more can be added to it until the next iteration
+            
+            merged = []
+        
+        '''    
+        Similar to above, we want to add the single peak peaksets to list of lists
+        so we need to then make each individual peak a list and then add it to the
+        pseudo peakset list
+        '''
+        
+        #Empty unmatched list variable to append to
+        
+        unmatched = []
+        
+        for i in unmatched_large:
+            
+            #Add to unmacthed, making it a list containing one peak
+            
+            unmatched.append(i)
+            
+            #Add to pseudo peak lists
+            
+            list_of_lists.append(unmatched)
+            
+             #Close the list so no more can be added to it until the next iteration
+            
+            unmatched = []
+            
+        #Same as above but for the other unmacthed list
+            
+        for i in unmatched_small:
+            
+             #Add to unmacthed, making it a list containing one peak
+            
+            unmatched.append(i)
+            
+             #Add to pseudo peak lists
+            
+            list_of_lists.append(unmatched)
+            
+            #Close the list so no more can be added to it until the next iteration
+            
+            unmatched = []
+            
+        #Return the list of lists- representing pseudo peaksets
+    
         return list_of_lists
     
     def make_peaksets(list_of_pseudo_peaksets):
@@ -683,14 +748,15 @@ class Plotter:
     #Function to extract the RT from the OBJECTS and convert them into seconds
      
     def rt_extract_convert(peak_obj_list):
+    
         '''
         Parameters
         ----------
         peak_obj_list : peak or peakset object
-        DESCRIPTION: This will loop over the list attribute in the object,#
+        DESCRIPTION: This will loop over the list attribute in the object,
         extracting the RT values into a sepearate list
         These will be converted to seconds (as mzMINE represent RT in minutes) 
-        prior tO being placed into the new list.
+        prior to being placed into the new list.
         Returns
         -------
         List of RT in seconds
@@ -727,7 +793,7 @@ class Plotter:
         
         else:
             
-            #Find out the original file, to do that I need to loop over all the peaksets and find all the unique file names
+            #Find out the original file, to do that; loop over all the peaksets and find all the unique file names
             
             names =[]
             
@@ -755,15 +821,29 @@ class Plotter:
             
             '''
             Since peaksets are dealing with lists of lists it can get complicated quite quikcly
-            Instead, this for loop bellow will extract all the peak objects in peaks set and
+            Instead, this for loop bellow will extract all the peak objects in peakset and
             store them as a 1D list as thats easier to manipulate
             '''
             
+            #Variable to store peaksets that dont contain only a single peak
+            
+            matched = []
+            
+            #List variable for the eventual 1d list of peaks in peakset
+            
             peaks = []
+    
+            #if the peakset obj has more than one peak, append it to the matched list
             
-            #loop over peakset objects
-            
-            for peakset in peak_obj_list:
+            for ps in peak_obj_list:
+                
+                if ps.number_of_peaks != 1:
+                    
+                    matched.append(ps)
+                    
+            #for all the peaks in the matched list, loop over those and extract individual peaks
+        
+            for peakset in matched:
                 
                 #loop over peak list attributes that are part of those objects
                 
@@ -772,12 +852,8 @@ class Plotter:
                     #Get the peaks in that list attribute and append it to this list
                     
                     peaks.append(peak)
-            
-            #This method produces a lot of repeats so make the list only contain unique peak objects using set()
-            
-            peaks = list(set(peaks))
-            
-            #loop over this peak obj list and extract and convert their rt
+                
+            #now that we have a 1d list of peaks in peakset, convert them into seconds
             
             for peak in peaks:
                 
