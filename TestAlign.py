@@ -9,8 +9,8 @@ import UsefulMethods as um
 from PeakTools import Peak as p
 from PeakTools import Plotter as plot
 
-p1 = um.peak_creator('reduced_multi_1_full.csv')
-p2 = um.peak_creator('reduced_multi_2_full.csv')
+p1 = um.peak_creator('multi 1 ms2.csv')
+p2 = um.peak_creator('multi 2 ms2.csv')
 
 #p1 = p.peak_storage(f1)
 #p2 = p.peak_storage(f2)
@@ -20,8 +20,8 @@ p2 = um.peak_creator('reduced_multi_2_full.csv')
 p1.sort(key=lambda x: x.intensity, reverse=True)
 p2.sort(key=lambda x: x.intensity, reverse=True)
 
-p1 = um.most_sig_peaks(p1, 5e6)
-p2 = um.most_sig_peaks(p2, 5e6)
+#p1 = um.most_sig_peaks(p1, 5e6)
+#p2 = um.most_sig_peaks(p2, 5e6)
 
 print(len(p1), len(p2))
 
@@ -84,22 +84,11 @@ def align(peak_obj_list, another_peak_obj_list):
     rt_buffer = 0.08
     
     '''
-    loop over every peak in the first list, comparing it to every peak in the 
-    second list, if they fall within an acceptable range- dictated by the upper
-    and lower tolerances set by the buffers, then its used to created a new peakset list
-    
-    once the first peak in the first file has been comapred to all peaks in the second file
-    the next peak is checked and this process continues until all peaks have been compared
-    and peakset lists are created.
-    
-    in the list bellow, i and j both represent peaks
-    '''
-    
-    '''
     #The largest list needs to be the first in the loop or else it'll produce an error when
     calculating the mean mv, rt ect downstream at the peakset creation stage as there will be null values
+    The conditionals bellow will find the largest list amongst the arguments provided
     '''
-    
+
     if len(peak_obj_list) > len(another_peak_obj_list):
         
         largest = peak_obj_list
@@ -112,34 +101,24 @@ def align(peak_obj_list, another_peak_obj_list):
         
         
     '''
-    Lists for those that dont match to be added to
-    Unique 1 for those in the largest list and unique 2 for those in the smaller list
-    We want them to be in seperate lists as they're not matched so we want to keep them seperate
+    Empty list variables to append to in the loops bellow
     '''
     
     matched_large = []
     matched_small = []
     unmatched_large = []
     unmatched_small = []
-    
-    
+     
     '''
-    30/06 I'm tweeking this method here as I have found it to be faulty
-    The maxiumm amount of peaksets that should be found from this is 526- and that 
-    should only be happening when no peaks match
-    So bellow ive reworked the method
+    loop over every peak in the first list, comparing it to every peak in the 
+    second list, if they fall within an acceptable range- dictated by the upper
+    and lower tolerances set by the buffers, then its used to created a new peakset list
     
-    In this state it'll loop over all the peaks in largest and find matches
-    If it matches then both peaks from the 2 files are added to peakset, if not
-    then only the unique peaks from the largest are appended  if not
+    once the first peak in the first file has been comapred to all peaks in the second file
+    the next peak is checked and this process continues until all peaks have been compared
+    and peakset lists are created.
     
-    Due to the loop structure its impossible to make unique peaksets from both files
-    Instead Ive made a seperate nested for loop, this goes over all the peaks in the
-    smallest peak list and if that peak isnt in peakset (list ive made in the nested for loops bellow)
-    then its added to unmatched_2. From here I'm getting the number of pseudo peaksets to be 370 which sounds
-    about right
-    
-    Only thing to do now is sort out the rt extract and sort as thats a bit off
+    in the list bellow, i and j both represent peaks
     '''
     
     for i in largest:
@@ -172,77 +151,101 @@ def align(peak_obj_list, another_peak_obj_list):
                 
                 matched_large.append(i)
                 matched_small.append(j)
-                
+    
+    #Use the list of matched peaks to find the ones that didnt match            
+    
     for i in largest:
+        
+        #If it isn't in the matched list then it must be unmatched
+        
         if i not in matched_large:
-            unmatched_large.append(i)
             
+            #Append it to the unmatched list
+            
+            unmatched_large.append(i)
+    
+    #Use the list of matched peaks to find the ones that didnt match                    
+    
     for i in smallest:
+        
+        #If it isn't in the matched list then it must be unmatched
+        
         if i not in matched_small:
+            
+            #Append it to the unmatched list
+            
             unmatched_small.append(i)
-    
-    print(len(matched_large))   
-    print(len(matched_small))  
-    print(len(unmatched_large))
-    print(len(unmatched_small))
-    
+
+    '''
+    If the peaks match then they make up one peakset
+    The argument for a peakset is a list of peaks so the matched large and matched small
+    lists need to be combined together, the loop bellow will achieve this
+    '''
+
+    #Empty merged list variable to append to
+
     merged = []
-    
-    counter = 0
     
     for i in range(0, len(matched_large)):
         
+        #Use the indexes to append them together, ie so the peak that are matched are in the list together
+        
         merged.append(matched_large[i])
         merged.append(matched_small[i])
+        
+        #Add this list to the list of lists- representing pseudo peaksets
+        
         list_of_lists.append(merged)
+        
+        #Close the list so no more can be added to it until the next iteration
+        
         merged = []
-
-    print("len of list of lists after combining matched1 and 2", len(list_of_lists))
+    
+    '''    
+    Similar to above, we want to add the single peak peaksets to list of lists
+    so we need to then make each individual peak a list and then add it to the
+    pseudo peakset list
+    '''
+    
+    #Empty unmatched list variable to append to
     
     unmatched = []
     
     for i in unmatched_large:
         
+        #Add to unmacthed, making it a list containing one peak
+        
         unmatched.append(i)
+        
+        #Add to pseudo peak lists
+        
         list_of_lists.append(unmatched)
+        
+         #Close the list so no more can be added to it until the next iteration
+        
         unmatched = []
+        
+    #Same as above but for the other unmacthed list
         
     for i in unmatched_small:
         
+         #Add to unmacthed, making it a list containing one peak
+        
         unmatched.append(i)
+        
+         #Add to pseudo peak lists
+        
         list_of_lists.append(unmatched)
+        
+        #Close the list so no more can be added to it until the next iteration
+        
         unmatched = []
         
-        
-    
-    '''    
-    double = []            
+    #Return the list of lists- representing pseudo peaksets
 
-    for i in list_of_lists:
-    
-        if len(i) ==2:
-    
-            double.append(i)
-    
-   
-    for i in smallest:           
-        for j in double:
-            if i not in j:
-                unmatched_file2.append(i)
-                list_of_lists.append(unmatched_file2)
-                unmatched_file2 = []
-            
-    #peakset = list(set(peakset))
-    #unmatched_file1 = list(set(unmatched_file1))
-    #unmatched_file2 = list(set(unmatched_file2))
-    
-    #list_of_lists.append(peakset)
-    #list_of_lists.append(unmatched_file1)
-    #list_of_lists.append(unmatched_file2)
-    '''
     return list_of_lists
 
-pps = align(p1,p2)
+pps = ps.align(p1,p2)
 print(len(pps))
 ps = ps.make_peaksets(pps)
 print("peaksetssssss",len(ps))
@@ -263,14 +266,15 @@ Go step by step and test it to see where im going wrong
 '''
 
 def rt_extract_convert(peak_obj_list):
+    
     '''
     Parameters
     ----------
     peak_obj_list : peak or peakset object
-    DESCRIPTION: This will loop over the list attribute in the object,#
+    DESCRIPTION: This will loop over the list attribute in the object,
     extracting the RT values into a sepearate list
     These will be converted to seconds (as mzMINE represent RT in minutes) 
-    prior tO being placed into the new list.
+    prior to being placed into the new list.
     Returns
     -------
     List of RT in seconds
@@ -307,7 +311,7 @@ def rt_extract_convert(peak_obj_list):
     
     else:
         
-        #Find out the original file, to do that I need to loop over all the peaksets and find all the unique file names
+        #Find out the original file, to do that; loop over all the peaksets and find all the unique file names
         
         names =[]
         
@@ -339,10 +343,15 @@ def rt_extract_convert(peak_obj_list):
         store them as a 1D list as thats easier to manipulate
         '''
         
+        #Variable to store peaksets that dont contain only a single peak
+        
         matched = []
+        
+        #List variable for the eventual 1d list of peaks in peakset
+        
         peaks = []
-        counter = 0
-        #loop over peakset objects
+
+        #if the peakset obj has more than one peak, append it to the matched list
         
         for ps in peak_obj_list:
             
@@ -350,8 +359,8 @@ def rt_extract_convert(peak_obj_list):
                 
                 matched.append(ps)
                 
-        print("length after removing singlet peaksets", len(matched))
-        
+        #for all the peaks in the matched list, loop over those and extract individual peaks
+    
         for peakset in matched:
             
             #loop over peak list attributes that are part of those objects
@@ -362,7 +371,7 @@ def rt_extract_convert(peak_obj_list):
                 
                 peaks.append(peak)
             
-        #loop over this peak obj list and extract and convert their rt
+        #now that we have a 1d list of peaks in peakset, convert them into seconds
         
         for peak in peaks:
             
@@ -386,15 +395,126 @@ def rt_extract_convert(peak_obj_list):
         
         return rt1, rt2
                        
-rt1, rt2 = rt_extract_convert(ps)
+#rt1, rt2 = plot.rt_extract_convert(ps)
+
+#print(len(rt1),len(rt2))
+        
+#diff = plot.rt_minus_rt_plot(rt1, rt2)
+
+#plot(rt1,diff,"","","",False)
+
+#02/07- dont need to worry about anchors for now
+
+'''
+
+import MakeAnchors as ma
+
+mz_anch = ma.filter_mz(ps, 5e7)
+
+rt_anch = ma.filter_rt(mz_anch)
+
+print("mz anchors = {} and rt anchors = {}".format(len(mz_anch), len(rt_anch)))
+
+rt1, rt2 = plot.rt_extract_convert(rt_anch)
+
+print(len(rt1),len(rt2))
+'''
+
+#Testing the ms2 mtaching
+
+import similarity_calc as sc
+
+spectra_matches = sc.main("multi1_ms2.MGF","multi2_ms2.MGF")
+
+def assign_ms2(peakset_list, spectra_list):
+    
+    #make an empty list, match peaksets to their spectra, if they have it
+    
+    peaksets_and_ms2 = []
+    
+    for ps in peakset_list:
+        
+        for peak in ps.peaks:
+            
+            peak_id = peak.get_id()
+            
+            '''
+            there are bound to be repeated values in the ids in peakset since
+            We're getting the peaks from more than 2 files
+            the id in spectra list at the first index is equal to that of the first
+            mgf file- which is paired with multi1 ms2. So for them to match, the peak
+            must have that file name and match an id from the spectra list
+            '''
+            og_file = peak.get_file()
+            
+            for ms2 in spectra_list:
+                
+                #Kiahs code has the ids as strings, need to go back and change that
+                
+                if ms2[0] == peak_id and og_file == 'multi 1 ms2.csv' :
+                    
+                    together = (ps, ms2)
+                    
+                    peaksets_and_ms2.append(together)
+    
+    #Length of list should equal the length of the spectra file
+                    
+    return peaksets_and_ms2                    
+
+            
+tog = assign_ms2(ps, spectra_matches)
+
+#Now that peaksets are matched to thier ms2, loop through and compare peaks based on ms2
+
+def ms2_matching(combined):
+    
+    highly_likely_matches = []
+
+    for row in combined:
+
+        ps = row[0]
+        
+        ms2 = row[1]
+        
+        peak_list = ps.peaks
+        
+        if len(peak_list) > 1:
+            
+            for peak in peak_list:
+                
+                file = peak.get_file()
+                
+                checker = peak.get_id() in ms2[1]
+                
+                score = ms2[2]
+                
+                if file == 'multi 2 ms2.csv' and checker == True and score > .98:
+
+                    highly_likely_matches.append(ps)
+                    
+    return highly_likely_matches
+
+test = ms2_matching(tog)
+
+#Result = 43. It actually works. Keep in mind that this for the full file- no intensity filter applied.
+
+print(len(test))
+
+'''
+rt1, rt2 = plot.rt_extract_convert(test)
 
 print(len(rt1),len(rt2))
         
 diff = plot.rt_minus_rt_plot(rt1, rt2)
 
 plot(rt1,diff,"","","",False)
-            
-            
+'''
+
+
+
+
+
+
             
    
         
