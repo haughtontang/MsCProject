@@ -9,12 +9,15 @@ import GPy
 from PeakTools import PeakSet as ps
 from PeakTools import Plotter as plot
 import UsefulMethods as um
+import similarity_calc as sc
 import numpy as np
 
 #Import and make peaks
 
-multi1 = um.peak_creator('reduced_multi_1_full.csv')
-multi2 = um.peak_creator('reduced_multi_2_full.csv')
+multi1 = um.peak_creator('multi 1 ms2.csv')
+multi2 = um.peak_creator('multi 2 ms2.csv')
+
+spectra_matches = sc.main("multi1_ms2.MGF","multi2_ms2.MGF")
 
 #Sort by intensity
 
@@ -23,19 +26,23 @@ multi2.sort(key = lambda x: x.intensity)
 
 #Get the most sig peaks
 
-multi1 = um.most_sig_peaks(multi1, 5e6)
-multi2 = um.most_sig_peaks(multi2, 5e6)
+#multi1 = um.most_sig_peaks(multi1, 5e6)
+#multi2 = um.most_sig_peaks(multi2, 5e6)
 
 pps = ps.align(multi1, multi2)
 
-ps = ps.make_peaksets(pps)
+peaksets = ps.make_peaksets(pps)
 
-multi1_rt, multi2_rt = plot.rt_extract_convert(ps)
+ps_with_ms2 = ps.assign_ms2(peaksets, spectra_matches)
+
+ms2_validated_peaksets = ps.ms2_matching(ps_with_ms2)
+
+multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
 
 rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
 
 #print(rt_minus[:20])
-
+'''
 #Try the GP but for the anchors only
 
 import MakeAnchors as ma
@@ -47,7 +54,7 @@ a1 = ma.filter_rt(a1)
 multi1_rt, multi2_rt = plot.rt_extract_convert(a1)
 
 rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
-
+'''
 import numpy as np
 
 X = multi1_rt
