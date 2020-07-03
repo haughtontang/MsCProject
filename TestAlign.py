@@ -248,7 +248,7 @@ def align(peak_obj_list, another_peak_obj_list):
 pps = ps.align(p1,p2)
 print(len(pps))
 ps = ps.make_peaksets(pps)
-print("peaksetssssss",len(ps))
+print("peakset length = ",len(ps))
 
 '''
 EOW note 26/06: Good news is it works, bad news is doesnt work properly, getting way too many results
@@ -427,31 +427,67 @@ import similarity_calc as sc
 spectra_matches = sc.main("multi1_ms2.MGF","multi2_ms2.MGF")
 
 def assign_ms2(peakset_list, spectra_list):
+    '''
+    Parameters
+    ----------
+    peakset_list : List of peakset objects
+    spectra_list : List of spectra objects
+    DESCRIPTION: Each peak from the file has a unique id, the same is true for ms spectra.
+    Using these unique ids, this method will loop over the peaks in peakset and
+    the spectra objects in the spectra list, find the matching ids- put the peakset object
+    and that spectrum object in a tuple, then append it to a list
+
+    Returns
+    -------
+    List of tuples corresponding to peakset objects and thier ms2 spectra.
+
+    '''
     
     #make an empty list, match peaksets to their spectra, if they have it
     
     peaksets_and_ms2 = []
     
+    '''
+    Find out which file amongst the peaks in peakset contains more peaks
+    This will be required later when assigning ms2 spectea- as the ids of the largest spectrum
+    list (corresponding to the largest picked peak file) is used to assign spectrum objects to 
+    peaksets
+    '''
+    
+    largest_file, smallest_file = um.find_largest_file(peakset_list)
+    
+    '''
+    loop over the list of peakset objects
+    This will require a nested loop as each peakset object has a list attribute
+    which contains the peaks associated with that peakset
+    '''
+    
     for ps in peakset_list:
         
         for peak in ps.peaks:
             
-            peak_id = peak.get_id()
-            
             '''
             there are bound to be repeated values in the ids in peakset since
             We're getting the peaks from more than 2 files
-            the id in spectra list at the first index is equal to that of the first
-            mgf file- which is paired with multi1 ms2. So for them to match, the peak
+            the id in spectra list at the first index is equal to that of the largest
+            mfg file- which is paired with the largest picked peak file. So for them to match, the peak
             must have that file name and match an id from the spectra list
             '''
-            og_file = peak.get_file()
+            #Get the peak id in peakset
+            
+            peak_id = peak.get_id()
+            
+            #get the file that the peak originated from
+             
+            original_file = peak.get_file()
             
             for ms2 in spectra_list:
                 
-                #Kiahs code has the ids as strings, need to go back and change that
+                #The id of the largest mfg file is at the 0th index
                 
-                if ms2[0] == peak_id and og_file == 'multi 1 ms2.csv' :
+                if ms2[0] == peak_id and original_file == largest_file:
+                    
+                    #Make a tuple to append to the list
                     
                     together = (ps, ms2)
                     
@@ -467,10 +503,41 @@ tog = assign_ms2(ps, spectra_matches)
 #Now that peaksets are matched to thier ms2, loop through and compare peaks based on ms2
 
 def ms2_matching(combined):
+    '''
+    Parameters
+    ----------
+    combined : a list of tuples containing peakset objects and their ms2 spectra
+    DESCRIPTION: This will filter through the tuple list and find peaksets that
+    Have very highly scoring similarity scores- the cut off value for this has been
+    set at 0.99 similarity
+    Returns
+    -------
+    A list of peakset objects that have very high similarity score
+    '''
+    
+    #Empty list to return at the end
     
     highly_likely_matches = []
+    
+    #Get the largest and smallest file names
+    
+    #First need to get a list of peaksets
+    
+    peaksets = []
+    
+    for row in combined:
+        
+        ps = row[0]
+        
+        peaksets.append(ps)
+    
+    largest, smallest = um.find_largest_file(peaksets)
+    
+    #Loop over the list of tuples
 
     for row in combined:
+        
+        #Store the information in the tuples as seperate variables
 
         ps = row[0]
         
@@ -478,37 +545,77 @@ def ms2_matching(combined):
         
         peak_list = ps.peaks
         
+        '''
+        We want to validate peaksets that have greater that have >1 peak, as these are likely to
+        Be the same metabolite across different files, so we only want to run the ms2 validation
+        on peaks that meet this criteria
+        '''
+        
         if len(peak_list) > 1:
+            
+            #Look over the multi peak peaksets
             
             for peak in peak_list:
                 
+                #Get the file the peak originated from
+                
                 file = peak.get_file()
+                
+                '''
+                The spectra matches are themsleves tuples, in which they have a list of ids of the
+                smaller mfg file that are compared to the largest mfg file. This is done for each id of the 
+                larger mfg file and each comparison makes up one tuple in the list
+                
+                The checker boolean bellow is checking if the id of the specific peak in the peakset list
+                is one of the peaks that was compared to when making spectra comparisons. In the previous align method
+                The spectra and peakset objects were matched by the ids of the largest file. In this step they're
+                matched by the id of the smaller file
+                
+                This is only one step, as the id of the larger file may coincidentally also match an id of a spectra
+                that was compared the peaks file name must also be equal to that of the smaller file. That is why
+                the file names were generated earlier
+                '''
+                
+                #File list is at the second index in the spectra matches tuple
                 
                 checker = peak.get_id() in ms2[1]
                 
+                #An average score of all the comparisons made is at the third tuple
+                
                 score = ms2[2]
                 
-                if file == 'multi 2 ms2.csv' and checker == True and score > .98:
+                '''
+                To be considered a likely match the peak must originate from the smallest file,
+                have been a peak that had an ms2 spectra that was compared against the larger mfg file
+                and have a similarity score > .98
+                
+                '''
+                
+                if file == smallest and checker == True and score > .98:
+                    
+                    #If its a match, append it to the list
 
                     highly_likely_matches.append(ps)
-                    
+    
+    #A list containing the peaks that are likely to have matched bt m/z, rt and ms2 spectra matching                 
+    
     return highly_likely_matches
 
-test = ms2_matching(tog)
+ms2_validated_peaksets = ms2_matching(tog)
 
 #Result = 43. It actually works. Keep in mind that this for the full file- no intensity filter applied.
 
-print(len(test))
+#print(len(test))
 
-'''
-rt1, rt2 = plot.rt_extract_convert(test)
+
+rt1, rt2 = plot.rt_extract_convert(ms2_validated_peaks)
 
 print(len(rt1),len(rt2))
         
 diff = plot.rt_minus_rt_plot(rt1, rt2)
 
-plot(rt1,diff,"","","",False)
-'''
+plot(rt1,diff,"RT difference for peaks matched by m/z, rt and MS2 spectra","","",False)
+
 
 
 
