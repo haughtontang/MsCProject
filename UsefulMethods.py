@@ -115,3 +115,72 @@ def most_sig_peaks(peak_obj_list, value):
             #Return updated list of sig peaks    
             
             return sig_peaks
+        
+def find_largest_file(peakset_list):
+    
+    '''
+    Parameters
+    ----------
+    peakset_list : list of peakset objects
+    DESCRIPTION: Loops through the peakset object list, exctracts the unique
+    file names from where the peaks originated from and returns the
+    file name of the largest and smallest file names
+
+    Returns
+    -------
+    largest and smallest file name- In THAT order
+
+    '''
+    
+    '''
+    Find out which file amongst the peaks in peakset contains more peaks
+    This will be required later when assigning ms2 spectea- as the ids of the largest spectrum
+    list (corresponding to the largest picked peak file) is used to assign spectrum objects to 
+    peaksets
+    
+    The for loop bellow will extract all files that the peaks originated from
+    '''
+    
+    file_list = []
+    
+    for ps in peakset_list:
+        for peak in ps.peaks:
+            
+            file = peak.get_file()
+            file_list.append(file)
+    
+    file_list = list(set(file_list))
+    
+    #Now it will find out which file is larger
+    
+    #Count variables to track the number of peaks per file
+    
+    file_1_count = 0
+    file_2_count = 0
+    
+    for ps in peakset_list:
+        for peak in ps.peaks:
+            
+            file = peak.get_file
+            
+            if file == file_list[0]:
+                
+                file_1_count +=1
+                
+            else:
+                
+                file_2_count +=1
+                
+    #Determine which is larger and asign variable based on this
+    
+    if file_1_count > file_2_count:
+        
+        largest_file = file_list[0]
+        smallest_file = file_list[1]
+        
+    else:
+        
+        largest_file = file_list[1]
+        smallest_file = file_list[0]
+        
+    return largest_file, smallest_file
