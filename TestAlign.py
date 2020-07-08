@@ -9,8 +9,8 @@ import UsefulMethods as um
 from PeakTools import Peak as p
 from PeakTools import Plotter as plot
 
-p1 = um.peak_creator('multi 1 ms2.csv')
-p2 = um.peak_creator('multi 2 ms2.csv')
+p1 = um.peak_creator('multi 1 ms2.csv', "multi1_ms2.MGF")
+p2 = um.peak_creator('multi 2 ms2.csv', "multi2_ms2.MGF")
 
 #p1 = p.peak_storage(f1)
 #p2 = p.peak_storage(f2)
@@ -81,7 +81,7 @@ def align(peak_obj_list, another_peak_obj_list):
     '''
 
     mz_buffer = 0.00015
-    rt_buffer = 0.08
+    rt_buffer = 0.5
     
     '''
     #The largest list needs to be the first in the loop or else it'll produce an error when
@@ -424,7 +424,37 @@ print(len(rt1),len(rt2))
 
 import similarity_calc as sc
 
-spectra_matches = sc.main("multi1_ms2.MGF","multi2_ms2.MGF")
+#spectra_matches = sc.main("multi1_ms2.MGF","multi2_ms2.MGF")
+
+#This method finds peaksets that have >1 peak in them and then checks if they have ms2 and then calculates the similarity
+
+def ms2_comparison(peakset_list):
+    
+    ms2_comp = []
+    
+    for ps in peakset_list:
+        
+        if len(ps.peaks) > 1:
+            
+            ms2 = []
+        
+            for peak in ps.peaks:
+                
+                if peak.ms2 != None:
+                    
+                    ms2.append(peak.ms2)
+                    
+            if len(ms2) > 1 and None not in ms2:
+                
+                spectra_similarity = sc.main(ms2)
+                
+                if spectra_similarity > 0.9:
+                    
+                    ms2_comp.append(ps)
+                    
+    return ms2_comp
+            
+            
 
 def assign_ms2(peakset_list, spectra_list):
     '''
@@ -498,7 +528,7 @@ def assign_ms2(peakset_list, spectra_list):
     return peaksets_and_ms2                    
 
             
-tog = assign_ms2(ps, spectra_matches)
+#tog = assign_ms2(ps, spectra_matches)
 
 #Now that peaksets are matched to thier ms2, loop through and compare peaks based on ms2
 
@@ -601,21 +631,26 @@ def ms2_matching(combined):
     
     return highly_likely_matches
 
-ms2_validated_peaksets = ms2_matching(tog)
+ms2_validated_peaksets = ms2_comparison(ps)
 
 #Result = 43. It actually works. Keep in mind that this for the full file- no intensity filter applied.
 
 #print(len(test))
 
 
-rt1, rt2 = plot.rt_extract_convert(ms2_validated_peaks)
+rt1, rt2 = plot.rt_extract_convert(ms2_validated_peaksets)
 
 print(len(rt1),len(rt2))
         
 diff = plot.rt_minus_rt_plot(rt1, rt2)
 
-plot(rt1,diff,"RT difference for peaks matched by m/z, rt and MS2 spectra","","",False)
+diff.sort(key=float, reverse=True)
 
+print(diff)
+
+#plot(rt1,diff,"RT difference for peaks matched by m/z, rt and MS2 spectra","","",False)
+
+#spectra = sc.mgf_reader("multi1_ms2.MGF")
 
 
 

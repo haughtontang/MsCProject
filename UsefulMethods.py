@@ -7,8 +7,9 @@ Created on Thu Jun 18 16:58:41 2020
 
 import csv
 from PeakTools import Peak
+import similarity_calc as sc
 
-def peak_creator (file_path):
+def peak_creator (file_path, mgf_path):
     
     '''
     Parameters
@@ -51,7 +52,36 @@ def peak_creator (file_path):
         
         #Now that its properly formatted as the proper type put it into a list
         
-        peaks.append(Peak(key, mz, rt, height, file_path))
+        peaks.append(Peak(key, mz, rt, height, file_path, None))
+        
+    #Create a list of spectra objects- representing an MS2 specra
+    
+    spectra = sc.mgf_reader(mgf_path)
+    
+    #Match the spectra objects to peak objects by their ID- if a match is found
+    #alter the ms2 attribute in peak to be equal to the spectra object
+    
+    for peak in peaks:
+        
+        #Get the id of the peak
+        
+        key = peak.get_id()
+        
+        '''
+        Loop over all ms2 spectra in the mgf file (stored in this spectra list)
+        and check if there are any matches
+        '''
+        for ms2 in spectra:
+            
+            #Get the ID of the ms2 spectra
+            
+            ms2_id = ms2.feature_id
+            
+            #If the IDs match then alter the ms2 attrbiute of the peak object from none to equal the spectra object it matches
+            
+            if key == ms2_id:
+                
+                peak.ms2 = ms2
         
     return peaks
 

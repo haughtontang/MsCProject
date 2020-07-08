@@ -9,7 +9,7 @@ import statistics
 
 class Peak(object):
     
-    def __init__(self, key, mz, rt, intensity, file):
+    def __init__(self, key, mz, rt, intensity, file, ms2):
         
         '''
         Parameters
@@ -28,10 +28,11 @@ class Peak(object):
         self.rt = rt
         self.intensity = intensity
         self.file = file
+        self.ms2 = ms2
     
     #Getters to be used to get specific access to the peak objects attributes
     
-    def get_id (self):
+    def get_id(self):
         
         return self.id
     
@@ -167,7 +168,7 @@ class PeakSet(object):
         '''
     
         mz_buffer = 0.00015
-        rt_buffer = 0.08
+        rt_buffer = 0.5
         
         '''
         #The largest list needs to be the first in the loop or else it'll produce an error when
@@ -534,7 +535,7 @@ class PeakSet(object):
           
 import matplotlib.pyplot as plt
 
-class Plotter:
+class Plotter(object):
     
     def __init__(self, x, y, title, xtitle, ytitle, show_lobf):
         

@@ -72,7 +72,7 @@ Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
 #100 is probably a bit too high but it does give a much nice shape- will investigate later
 
-kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=100.)
+kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=30.)
 
 m = GPy.models.GPRegression(X,Y, kernel = kernel)
 

@@ -219,14 +219,14 @@ def library_match(spectra_list,lib_mgf):
     print(f"{m} matches, \t{n} unmatched")
         
         
-def main(file_path, another_one):
+def main(spectra_list):
     """Give mgf file path as argument.
     Returns a list of spectrum pairs, showing the two spectrum IDs and the cosine similarity score of each pair"""
 
     #make list of spectrum objects from mgf file
     #print("reading file")
-    spectra_list=mgf_reader(file_path)
-    another_spectra_list = mgf_reader(another_one)
+#    spectra_list=mgf_reader(file_path)
+ #   another_spectra_list = mgf_reader(another_one)
     #print("done")
     #match to library file to add names to spectra objects
     #library_match(spectra_list,".\massbank_library\MASSBANK.mgf")
@@ -239,7 +239,7 @@ def main(file_path, another_one):
     modification_tolerance=400
     
     #Check which spectra list is larger- the larger one will have to run first in the list
-    
+    '''
     if len(spectra_list) > len(another_spectra_list):
         
         largest = spectra_list
@@ -251,14 +251,21 @@ def main(file_path, another_one):
         smallest = spectra_list
 
     #Compare the 2 spectra
-
+    '''
+    
+    spectra_1 = spectra_list[0]
+    spectra_2 = spectra_list[1]
+    
+    score,peak_count=cosine_score(spectra_1,spectra_2,fragment_tolerance)
+        
+    '''   
     for spectrum_one in largest:
         
-        '''
+        
         Empty list variables
         The first one will tell tell us all the peak ids in spectrum 2 that spectrum one was compared to
         The score list is needed to create an averge score value to be returned in the final list
-        '''
+        
         #They are reset after every run of the next for loop for the next set of comparisons
         
         peaks_compared = []
@@ -311,8 +318,8 @@ def main(file_path, another_one):
     
     # print(len(spectra_matches))
     # spectra_matches=filter_pairs(spectra_matches)
-
-    return spectra_matches
+'''
+    return score
 
 ##to use from command line by giving path to mgf file as argument
 #if __name__ == "__main__":
@@ -329,7 +336,7 @@ end = time.ctime()
 print(f"start: {start}\tend: {end}")
 '''
 
-pairs=main("multi1_ms2.MGF","multi2_ms2.MGF")
+#pairs=main("multi1_ms2.MGF","multi2_ms2.MGF")
 
 #print("length of pairs:" ,len(pairs))
    
