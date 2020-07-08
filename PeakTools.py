@@ -19,6 +19,7 @@ class Peak(object):
         rt: float
         intensity: float
         file: string
+        ms2: spectrum object
         DESCRIPTION: This constructor will create peak objects- which are defined by the 3 
         arguments passed to the constrcutor
         -------
@@ -50,11 +51,15 @@ class Peak(object):
     
     def get_file(self):
         
-        return self.file      
+        return self.file
+
+    def get_ms2(self):
+        
+        return self.ms2  
 
 
 import UsefulMethods as um
-import similarity_calc as sc        
+import SimilarityCalc as sc        
 
 class PeakSet(object):
     
@@ -63,7 +68,7 @@ class PeakSet(object):
         '''
         Parameters
         ----------
-        peak_list: list of peak objects that have similar mz and rt
+        peak_list: list of peak objects 
         DESCRIPTION: This constructor will create peakset objects- which are defined 
         by the arguments passed to the constructor
         -------
@@ -360,198 +365,68 @@ class PeakSet(object):
             
         return peakset_list
     
-    def assign_ms2(peakset_list, spectra_list):
-        '''
-        Parameters
-        ----------
-        peakset_list : List of peakset objects
-        spectra_list : List of spectra objects
-        DESCRIPTION: Each peak from the file has a unique id, the same is true for ms spectra.
-        Using these unique ids, this method will loop over the peaks in peakset and
-        the spectra objects in the spectra list, find the matching ids- put the peakset object
-        and that spectrum object in a tuple, then append it to a list
-    
-        Returns
-        -------
-        List of tuples corresponding to peakset objects and thier ms2 spectra.
-    
-        '''
-        
-        #make an empty list, match peaksets to their spectra, if they have it
-        
-        peaksets_and_ms2 = []
-        
-        '''
-        Find out which file amongst the peaks in peakset contains more peaks
-        This will be required later when assigning ms2 spectea- as the ids of the largest spectrum
-        list (corresponding to the largest picked peak file) is used to assign spectrum objects to 
-        peaksets
-        '''
-        
-        largest_file, smallest_file = um.find_largest_file(peakset_list)
-        
-        '''
-        loop over the list of peakset objects
-        This will require a nested loop as each peakset object has a list attribute
-        which contains the peaks associated with that peakset
-        '''
-        
-        for ps in peakset_list:
-            
-            for peak in ps.peaks:
-                
-                '''
-                there are bound to be repeated values in the ids in peakset since
-                We're getting the peaks from more than 2 files
-                the id in spectra list at the first index is equal to that of the largest
-                mfg file- which is paired with the largest picked peak file. So for them to match, the peak
-                must have that file name and match an id from the spectra list
-                '''
-                #Get the peak id in peakset
-                
-                peak_id = peak.get_id()
-                
-                #get the file that the peak originated from
-                 
-                original_file = peak.get_file()
-                
-                for ms2 in spectra_list:
-                    
-                    #The id of the largest mfg file is at the 0th index
-                    
-                    if ms2[0] == peak_id and original_file == largest_file:
-                        
-                        #Make a tuple to append to the list
-                        
-                        together = (ps, ms2)
-                        
-                        peaksets_and_ms2.append(together)
-        
-        #Length of list should equal the length of the spectra file
-                        
-        return peaksets_and_ms2                    
-
-            
-    #Now that peaksets are matched to thier ms2, loop through and compare peaks based on ms2
-    
-    def ms2_matching(combined):
-        '''
-        Parameters
-        ----------
-        combined : a list of tuples containing peakset objects and their ms2 spectra
-        DESCRIPTION: This will filter through the tuple list and find peaksets that
-        Have very highly scoring similarity scores- the cut off value for this has been
-        set at 0.99 similarity
-        Returns
-        -------
-        A list of peakset objects that have very high similarity score
-        '''
-        
-        #Empty list to return at the end
-        
-        highly_likely_matches = []
-        
-        #Get the largest and smallest file names
-        
-        #First need to get a list of peaksets
-        
-        peaksets = []
-        
-        for row in combined:
-            
-            ps = row[0]
-            
-            peaksets.append(ps)
-        
-        largest, smallest = um.find_largest_file(peaksets)
-        
-        #Loop over the list of tuples
-    
-        for row in combined:
-            
-            #Store the information in the tuples as seperate variables
-    
-            ps = row[0]
-            
-            ms2 = row[1]
-            
-            peak_list = ps.peaks
-            
-            '''
-            We want to validate peaksets that have greater that have >1 peak, as these are likely to
-            Be the same metabolite across different files, so we only want to run the ms2 validation
-            on peaks that meet this criteria
-            '''
-            
-            if len(peak_list) > 1:
-                
-                #Look over the multi peak peaksets
-                
-                for peak in peak_list:
-                    
-                    #Get the file the peak originated from
-                    
-                    file = peak.get_file()
-                    
-                    '''
-                    The spectra matches are themsleves tuples, in which they have a list of ids of the
-                    smaller mfg file that are compared to the largest mfg file. This is done for each id of the 
-                    larger mfg file and each comparison makes up one tuple in the list
-                    
-                    The checker boolean bellow is checking if the id of the specific peak in the peakset list
-                    is one of the peaks that was compared to when making spectra comparisons. In the previous align method
-                    The spectra and peakset objects were matched by the ids of the largest file. In this step they're
-                    matched by the id of the smaller file
-                    
-                    This is only one step, as the id of the larger file may coincidentally also match an id of a spectra
-                    that was compared the peaks file name must also be equal to that of the smaller file. That is why
-                    the file names were generated earlier
-                    '''
-                    
-                    #File list is at the second index in the spectra matches tuple
-                    
-                    checker = peak.get_id() in ms2[1]
-                    
-                    #An average score of all the comparisons made is at the third tuple
-                    
-                    score = ms2[2]
-                    
-                    '''
-                    To be considered a likely match the peak must originate from the smallest file,
-                    have been a peak that had an ms2 spectra that was compared against the larger mfg file
-                    and have a similarity score > .98
-                    
-                    '''
-                    
-                    if file == smallest and checker == True and score > .98:
-                        
-                        #If its a match, append it to the list
-    
-                        highly_likely_matches.append(ps)
-        
-        #A list containing the peaks that are likely to have matched bt m/z, rt and ms2 spectra matching                 
-        
-        return highly_likely_matches
+    #Find ms2 spectra in a list of peaksets and compare
     
     def ms2_comparison(peakset_list):
-    
+        
+        '''
+        Parameters
+        ----------
+        peakset_list : List of Peakset objects
+        DESCRIPTION: Loops over the list of peaks in peaksets- find peaksets that
+        match and that have ms2 spectra. Once they are found a method is called to check
+        the similarity score between the 2. If it is above a certain score threshold it
+        is appended to a list. This list will represent peaksets that have been aligned based on their
+        m/z, rt and ms2
+        Returns
+        -------
+        ms2_comp : A List of aligned peaksets
+        '''
+        
+        #Empty list of comparisons to be returned
+        
         ms2_comp = []
         
+        #Loop over peaksets
+        
         for ps in peakset_list:
+            
+            #We're only looking to compare matched peaksets so look for peaksets having >1 peaks making up the peakset
             
             if len(ps.peaks) > 1:
                 
+                #Empty list to store the spectrum objects that are an attribute of Peak objects
+                
                 ms2 = []
+                
+                #Loop over the peak list in peakset
             
                 for peak in ps.peaks:
                     
+                    #Not all peak objects have an ms2 attrbute so this checks for those that do
+                    
                     if peak.ms2 != None:
                         
-                        ms2.append(peak.ms2)
+                        #If one is found add it to the ms2 list
                         
+                        ms2.append(peak.ms2)
+                
+                '''
+                Of the matched peaks, some may have an ms2 spectrum whilst the others dont, by ensuring
+                that the ms list is larger than 1 and there are no null values we can check the similarity
+                score of both the spectra
+                '''
+                
                 if len(ms2) > 1 and None not in ms2:
                     
-                    spectra_similarity = sc.main(ms2)
+                    '''
+                    The function that checks the similarity takes a list of spectrum objects
+                    As its argument and returns a similarity score
+                    If this score is above the treshold then the peaks match on m/z,rt and ms2-
+                    Append that peakset to the list at the beginning of the function
+                    '''
+                    
+                    spectra_similarity = sc.similarity_score(ms2)
                     
                     if spectra_similarity > 0.9:
                         

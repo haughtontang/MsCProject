@@ -3,6 +3,8 @@ import numpy
 import sys
 import statistics
 
+#Written by Kiah
+
 class Peak:
     """Class to hold an MS2 peak"""
     def __init__(self,mass,intensity):
@@ -13,6 +15,7 @@ class Peak:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.mass},{self.intensity})"
         
+#Written by Kiah
 
 class Spectrum:
     def __init__(self):
@@ -43,6 +46,7 @@ class Spectrum:
         for peak in self.peaks:
             peak.norm_scaled=(peak.sqrt_intensity)/norm
 
+#Written by Kiah
 
 def mgf_reader(file_path):
     """Takes the path to a .mgf file. Returns a list of Spectrum objects, each containing the attributes contained in the
@@ -103,6 +107,8 @@ def mgf_reader(file_path):
     file.close()
     return spectra_list
 
+#Written by Kiah
+
 def cosine_score(spectrum_one, spectrum_two, fragment_tolerance=0.3, modified=True,precursor_tolerance=400):
     """takes two MS2 Spectrum objects, with the fragment tolerance and returns the cosine similarity score.
     By default will calculate modified cosine; use modification=False to return normal cosine.
@@ -162,183 +168,47 @@ def cosine_score(spectrum_one, spectrum_two, fragment_tolerance=0.3, modified=Tr
 
     return total, peak_count
 
-def filter_pairs(pairs):
-    """still to be completed"""
-    temp_pairs=[]
-    for pair in pairs:
-        # print(pair)
-        if pair[0]!=pair[1]:
-            if pair[2]>=0.7 and pair[3]>=6:
-                temp_pairs.append(pair)
-            
-    
-    # print("filtered:")
-    # print(temp_pairs)
-    print(f"number of filtered: {len(temp_pairs)}")
+#Written by Don
 
+def similarity_score(spectra_list):
+    '''
+    Parameters
+    ----------
+    spectra_list : A list of spectrum objects
+    DESCRIPTION: Takes the spectrum objects in the list provided and compares
+    Them producing a similarity score to be returned at the end
 
+    Returns
+    -------
+    Float: similarity score of spectrum objects compared
 
-    #sort by cosine - will need to remove lowest scored to reduce family size
-    pairs.sort(key=lambda spectra_pair: spectra_pair[2])
+    '''
 
-
-    """rest of function to be added"""
-
-def library_match(spectra_list,lib_mgf):
-    """Reads a given library mgf file and matches the given spectra to the library spectra using normal cosine.
-    Each test spectra is given the name of the library spectra match with the highest cosine score."""
-    print("reading library file")
-    library=mgf_reader(lib_mgf)
-    print("done")
-    m=0
-    n=0
-    for test_spectra in spectra_list:
-        #make list of all library matches
-        possibles=[]
-        print(f"spectra: {test_spectra.feature_id}")
-
-        for lib_spectra in library:
-            score, peaks = cosine_score(test_spectra,lib_spectra,modified=False) #normal cosine score
-            if score>=0.7 and peaks>=3:
-                #cosine and number of peaks above threshold so add to list of matches
-                possibles.append((score,peaks,lib_spectra.name))
-        
-        if len(possibles)>0:
-            #sort matches by cosine score
-            possibles.sort(reverse=True,key=lambda tuple: tuple[0])
-            #name spectrum by highest cosine score
-            test_spectra.name=possibles[0][2]
-            # print(test_spectra.feature_id+"\t"+test_spectra.name)
-            print("matched")
-            m+=1
-
-        else:
-            print("no matches")
-            n+=1
-
-    print(f"{m} matches, \t{n} unmatched")
-        
-        
-def main(spectra_list):
-    """Give mgf file path as argument.
-    Returns a list of spectrum pairs, showing the two spectrum IDs and the cosine similarity score of each pair"""
-
-    #make list of spectrum objects from mgf file
-    #print("reading file")
-#    spectra_list=mgf_reader(file_path)
- #   another_spectra_list = mgf_reader(another_one)
-    #print("done")
-    #match to library file to add names to spectra objects
-    #library_match(spectra_list,".\massbank_library\MASSBANK.mgf")
-    
     #list for matched spectra to be stored
     spectra_matches=[]
-
-    precursor_tolerance=1.0 #haven't used this, need to work out where to use
+    
+    #haven't used this, need to work out where to use
+    
+    precursor_tolerance=1.0 
     fragment_tolerance=0.3
     modification_tolerance=400
     
-    #Check which spectra list is larger- the larger one will have to run first in the list
     '''
-    if len(spectra_list) > len(another_spectra_list):
-        
-        largest = spectra_list
-        smallest = another_spectra_list
-        
-    else:
-        
-        largest = another_spectra_list
-        smallest = spectra_list
-
-    #Compare the 2 spectra
+    Extract the spectrum objects in the list as seperate variables
+    08/07- In the current state im running the program there will only ever be 2
+    Spectra being compared so the way they're extracted will work however it will
+    break if the program is ever expanded to compare more
     '''
     
     spectra_1 = spectra_list[0]
     spectra_2 = spectra_list[1]
     
+    #Call the above method to get the similarity score
+    
     score,peak_count=cosine_score(spectra_1,spectra_2,fragment_tolerance)
         
-    '''   
-    for spectrum_one in largest:
-        
-        
-        Empty list variables
-        The first one will tell tell us all the peak ids in spectrum 2 that spectrum one was compared to
-        The score list is needed to create an averge score value to be returned in the final list
-        
-        #They are reset after every run of the next for loop for the next set of comparisons
-        
-        peaks_compared = []
-        score_list = []
-        
-        for spectrum_two in smallest:
-                            
-            #cosine score calculation
-            
-            score,peak_count=cosine_score(spectrum_one,spectrum_two,fragment_tolerance)
-                
-            #if spectra don't match/precursor mass too far away, don't add to list
-            
-            if(score==0 and peak_count==0):
-                continue
-            
-            #Add the id of each peak being compared
-            
-            peaks_compared.append(spectrum_two.feature_id)
-            
-            #Add the score to the list
-           
-            score_list.append(score)
-            
-            #Old part of kiahs code bellow, may use again later
-            
-            #spectrum_match=(spectrum_one.feature_id,spectrum_two.feature_id,score,peak_count)
-      
-            #print(spectrum_match)
-            
-        #print("length of scores is {}".format(len(score_list)))
-        
-        #Calculate the mean of the scores
-        
-        mean_score = statistics.mean(score_list)
-        
-        #mean_peaks = statistics.mean(peaks)
-        
-        #each index of the matches list will have the tuple bellow
-        
-        spectrum_match = (spectrum_one.feature_id, peaks_compared, mean_score, peak_count)
-        
-        #Print just to make sure its all functioning- which it is
-        
-        #print(spectrum_match)
-        
-        #Append to the final list
-        
-        spectra_matches.append(spectrum_match)
-    
-    # print(len(spectra_matches))
-    # spectra_matches=filter_pairs(spectra_matches)
-'''
     return score
 
-##to use from command line by giving path to mgf file as argument
-#if __name__ == "__main__":
-#    main(sys.argv[1])
-
-'''
-import time
-start = time.ctime()
-
-pairs=main("multi1_ms2.MGF","multi2_ms2.MGF")
-
-end = time.ctime()
-#print start and end time of program running
-print(f"start: {start}\tend: {end}")
-'''
-
-#pairs=main("multi1_ms2.MGF","multi2_ms2.MGF")
-
-#print("length of pairs:" ,len(pairs))
    
     
     

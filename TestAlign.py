@@ -246,7 +246,7 @@ def align(peak_obj_list, another_peak_obj_list):
     return list_of_lists
 
 pps = ps.align(p1,p2)
-print(len(pps))
+print("pseudo peakset length = ", len(pps))
 ps = ps.make_peaksets(pps)
 print("peakset length = ",len(ps))
 
@@ -422,9 +422,9 @@ print(len(rt1),len(rt2))
 
 #Testing the ms2 mtaching
 
-import similarity_calc as sc
+import SimilarityCalc as sc
 
-#spectra_matches = sc.main("multi1_ms2.MGF","multi2_ms2.MGF")
+#spectra_matches = sc.similarity_score("multi1_ms2.MGF","multi2_ms2.MGF")
 
 #This method finds peaksets that have >1 peak in them and then checks if they have ms2 and then calculates the similarity
 
@@ -446,7 +446,7 @@ def ms2_comparison(peakset_list):
                     
             if len(ms2) > 1 and None not in ms2:
                 
-                spectra_similarity = sc.main(ms2)
+                spectra_similarity = sc.similarity_score(ms2)
                 
                 if spectra_similarity > 0.9:
                     

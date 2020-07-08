@@ -9,7 +9,7 @@ import GPy
 from PeakTools import PeakSet as ps
 from PeakTools import Plotter as plot
 import UsefulMethods as um
-import similarity_calc as sc
+import SimilarityCalc as sc
 import numpy as np
 
 #Import and make peaks

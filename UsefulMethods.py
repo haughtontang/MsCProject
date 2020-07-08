@@ -7,7 +7,7 @@ Created on Thu Jun 18 16:58:41 2020
 
 import csv
 from PeakTools import Peak
-import similarity_calc as sc
+import SimilarityCalc as sc
 
 def peak_creator (file_path, mgf_path):
     
