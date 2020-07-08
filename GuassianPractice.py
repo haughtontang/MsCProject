@@ -14,10 +14,8 @@ import numpy as np
 
 #Import and make peaks
 
-multi1 = um.peak_creator('multi 1 ms2.csv')
-multi2 = um.peak_creator('multi 2 ms2.csv')
-
-spectra_matches = sc.main("multi1_ms2.MGF","multi2_ms2.MGF")
+multi1 = um.peak_creator('multi 1 ms2.csv',"multi1_ms2.MGF")
+multi2 = um.peak_creator('multi 2 ms2.csv',"multi2_ms2.MGF")
 
 #Sort by intensity
 
@@ -33,9 +31,7 @@ pps = ps.align(multi1, multi2)
 
 peaksets = ps.make_peaksets(pps)
 
-ps_with_ms2 = ps.assign_ms2(peaksets, spectra_matches)
-
-ms2_validated_peaksets = ps.ms2_matching(ps_with_ms2)
+ms2_validated_peaksets = ps.ms2_comparison(peaksets)
 
 multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
 
@@ -72,7 +68,7 @@ Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
 #100 is probably a bit too high but it does give a much nice shape- will investigate later
 
-kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=30.)
+kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=100.)
 
 m = GPy.models.GPRegression(X,Y, kernel = kernel)
 
