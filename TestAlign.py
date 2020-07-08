@@ -644,9 +644,11 @@ print(len(rt1),len(rt2))
         
 diff = plot.rt_minus_rt_plot(rt1, rt2)
 
+#Checking the maximum rt difference
+
 diff.sort(key=float, reverse=True)
 
-print(diff)
+#print(diff)
 
 #plot(rt1,diff,"RT difference for peaks matched by m/z, rt and MS2 spectra","","",False)
 

@@ -53,7 +53,8 @@ class Peak(object):
         return self.file      
 
 
-import UsefulMethods as um        
+import UsefulMethods as um
+import similarity_calc as sc        
 
 class PeakSet(object):
     
@@ -531,6 +532,32 @@ class PeakSet(object):
         #A list containing the peaks that are likely to have matched bt m/z, rt and ms2 spectra matching                 
         
         return highly_likely_matches
+    
+    def ms2_comparison(peakset_list):
+    
+        ms2_comp = []
+        
+        for ps in peakset_list:
+            
+            if len(ps.peaks) > 1:
+                
+                ms2 = []
+            
+                for peak in ps.peaks:
+                    
+                    if peak.ms2 != None:
+                        
+                        ms2.append(peak.ms2)
+                        
+                if len(ms2) > 1 and None not in ms2:
+                    
+                    spectra_similarity = sc.main(ms2)
+                    
+                    if spectra_similarity > 0.9:
+                        
+                        ms2_comp.append(ps)
+                        
+        return ms2_comp
    
           
 import matplotlib.pyplot as plt
