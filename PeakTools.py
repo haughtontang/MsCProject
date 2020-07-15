@@ -45,6 +45,10 @@ class Peak(object):
         
         return self.rt
     
+    def set_rt(self, rt):
+        
+        self.rt = rt
+    
     def get_intensity(self):
         
         return self.intensity
@@ -147,7 +151,7 @@ class PeakSet(object):
     
     #Align the peaks into lists of peaks that have similar mz and rt
     
-    def align(peak_obj_list, another_peak_obj_list):
+    def align(peak_obj_list, another_peak_obj_list, rt_tol):
             
         '''
         Parameters
@@ -174,7 +178,7 @@ class PeakSet(object):
         '''
     
         mz_buffer = 0.00015
-        rt_buffer = 0.5
+        rt_buffer = rt_tol #0.025
         
         '''
         #The largest list needs to be the first in the loop or else it'll produce an error when
@@ -545,7 +549,7 @@ class Plotter(object):
                 
                 #converting from minutes to seconds so multiply by 60
                 
-                rt_convert = i.get_rt() *60
+                rt_convert = i.get_rt()
                 
                 #Add this converted time to a list
             
@@ -627,7 +631,7 @@ class Plotter(object):
                 
                 if peak.get_file() == names[0]:
                     
-                    rt = peak.get_rt() * 60
+                    rt = peak.get_rt() 
                     
                     rt1.append(rt)
                 
@@ -635,7 +639,7 @@ class Plotter(object):
                 
                 else:
                     
-                    rt = peak.get_rt() * 60
+                    rt = peak.get_rt() 
                     
                     rt2.append(rt)
             

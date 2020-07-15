@@ -50,6 +50,8 @@ def peak_creator (file_path, mgf_path):
         rt = float(row[2])
         height =  float(row[3])
         
+        rt = rt *60
+        
         #Now that its properly formatted as the proper type put it into a list
         
         peaks.append(Peak(key, mz, rt, height, file_path, None))
@@ -214,3 +216,36 @@ def find_largest_file(peakset_list):
         smallest_file = file_list[0]
         
     return largest_file, smallest_file
+
+def correct_rt(peak_obj_list, list_of_corrections):
+    '''
+    Parameters
+    ----------
+    rt_list_1 : list of retention times from a picked peak file
+    rt_list_2 : list of retention times from a different picked peak file
+    DESCRIPTION: Takes the values from the first list provided and subtracts
+    them from the values in the second list provided (they're subtracted at the same index)
+    Returns
+    -------
+    a list of floats containing the rt differences between the 2 files
+
+    '''
+    
+    '''
+    By zipping the lists together it means you only require 1 for loop to go through
+    and subtract the values
+    '''
+    
+    zip_obj = zip(peak_obj_list, list_of_corrections)
+    
+    for i, j in zip_obj:
+        
+        #i and j represent the first rt values in rt_list_1 and 2 respectively
+        
+        #simply append the subtraction value to the empty list created earlier
+        
+        new_rt = i.get_rt() + j
+
+        i.set_rt(new_rt)
+    
+

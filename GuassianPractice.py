@@ -33,7 +33,7 @@ multi2.sort(key = lambda x: x.intensity)
 #multi1 = um.most_sig_peaks(multi1, 5e6)
 #multi2 = um.most_sig_peaks(multi2, 5e6)
 
-pps = ps.align(multi1, multi2,0.025)
+pps = ps.align(multi1, multi2,1.5)
 
 peaksets = ps.make_peaksets(pps)
 
@@ -114,7 +114,7 @@ while variance <2:
         
         #match PS again
         
-        pseuo = ps.align(multi1, multi2, 0.33333)
+        pseuo = ps.align(multi1, multi2, 1.5)
         peak_sets = ps.make_peaksets(pseuo)
         
         num_of_ps = len(peak_sets)
@@ -125,7 +125,7 @@ while variance <2:
         
         ls += 2
         
-    variance+=0.1
+    variance+=1
     
     
 #sort it

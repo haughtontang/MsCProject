@@ -8,7 +8,6 @@ import GPy
 from PeakTools import PeakSet as ps
 from PeakTools import Plotter as plot
 import UsefulMethods as um
-import SimilarityCalc as sc
 import numpy as np
 
 #Method for creating numpy arrays that are needed for the model
@@ -66,6 +65,21 @@ def create_params(peak_file1, peak_file2):
     
     return X, Y
 
+def make_kernel(variance, ls):
+    '''
+    Parameters
+    ----------
+    variance : Float
+    ls : Float
+    DESCRIPTION: Makes a kernel object
+    Returns
+    -------
+    GPy RBF kernel object
+
+    '''
+    
+    return GPy.kern.RBF(input_dim=1, variance= variance, lengthscale= ls)
+
 def make_model(X, Y, kernel):
     
     '''
@@ -84,6 +98,122 @@ def make_model(X, Y, kernel):
     
     return GPy.models.GPRegression(X,Y, kernel = kernel)   
 
-def correct_rt(model, file_to_correct, RT_tolerance)
+def correct_rt(X, Y, file_to_correct, file_to_match, RT_tolerance):
+    
+    '''
+    Parameters
+    ----------
+    X: numpy array of input Retention times
+    Y: numpy array of rt -rt times
+    file_to_correct : file path of picked peaks to correct
+    file_to_match: file path of picked peaks to match with corrected file
+    RT_tolerance : float (seconds)- the tolerance of RT when matching peaks between file
+    DESCRIPTION: This method will find the optimum paramaters of the kernel to be
+    used in the GP model, the optimum kernel will produce the lowest number of peaksets-
+    which should result in more matched peaksets.
+    Returns
+    -------
+    List of corrected Peaksets
+    '''
+    
+    #list ariable to keep track of optimal paramters
+    
+    results = []
+    
+    #Variables to be incremented in the loop
+    
+    variance = 0.1
+    ls = 10
+    
+    while variance <2:
+    
+        while ls < 140:
+        
+            file_to_correct = um.peak_creator(file_to_correct)
+            file_to_match = um.peak_creator(file_to_match)
+            
+            #Sort by intensity
+            
+            file_to_correct.sort(key = lambda x: x.intensity)
+            file_to_match.sort(key = lambda x: x.intensity)
+            
+            #List of times from the file to corrected, needed as an input for the GP predict
+            
+            all_time = []
+            
+            for i in file_to_correct:
+                
+                all_time.append(i.get_rt())
+                
+            #Convert all time list into a numpy array- type needed for the predict method
+                
+            all_time = np.array(all_time).reshape(len(all_time),1)    
+            
+            #Make a kernel and model    
+            
+            kernel = make_kernel(variance, ls)
+            m = make_model(X, Y, kernel)
+    
+            #The predict method returns 2 arrays of mean and variance, so these 2 variables are needed        
+    
+            mean, var = m.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
+    
+            #convert from np array to list- needs to be done so that when adding the predicted shifts to the existing
+            #times there isnt a disparity in types
+            
+            mean = list(mean.flatten())
+            
+            #Alter the RT of the peaks- this method adds the 2 together
+            
+            mean = um.correct_rt(file_to_correct, mean)
+            
+            #match PS again
+            
+            pseuo = ps.align(file_to_match, file_to_correct, 5)
+            peak_sets = ps.make_peaksets(pseuo)
+            
+            #Get the length of the peakset list- lower is better as that means we have more matches
+            
+            num_of_ps = len(peak_sets)
+            
+            '''
+            Create a tuple to store the length of the peaksets along with
+            the value of the varaince and lengthscale variables, that created the
+            kernel- that created the model- that made the predictions for the
+            corrected RT. Place this in a results list to obtain the optimum params
+            '''
+            
+            tup = (variance, ls, num_of_ps, peak_sets)
+            
+            results.append(tup)
+            
+            #Increase lengthscale up until a limit
+            
+            ls += 2
+        
+        #Increment the varaince
+        
+        variance+=1
+    
+    '''
+    sort the list in ascending order of length of peaksets
+    The peakset with the lowest length has the best params for correcting RT
+    as this indicates there have been more matches
+    '''
+    results.sort(key=lambda tup: tup[2])
+    
+    most_optimum = results[0]
+    
+    #Get each value as its own variable
+    
+    for i in most_optimum:
+        
+        best_var = i[0]
+        best_ls = i[1]
+        best_ps = i[3]
+        
+    #return these variables
+    
+    return best_var, best_ls, best_ps
     
     

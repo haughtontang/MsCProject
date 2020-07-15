@@ -8,7 +8,7 @@ from PeakTools import PeakSet as ps
 import UsefulMethods as um
 from PeakTools import Peak as p
 from PeakTools import Plotter as plot
-
+#test = um.peak_creator("D:/Users/donha/Documents/MastersProject/Practice Python/reduced_multi_1_full.csv", "")
 p1 = um.peak_creator('multi 1 ms2.csv', "multi1_ms2.MGF")
 p2 = um.peak_creator('multi 2 ms2.csv', "multi2_ms2.MGF")
 
@@ -245,7 +245,7 @@ def align(peak_obj_list, another_peak_obj_list):
 
     return list_of_lists
 
-pps = ps.align(p1,p2)
+pps = ps.align(p1,p2, 1.5)
 print("pseudo peakset length = ", len(pps))
 ps = ps.make_peaksets(pps)
 print("peakset length = ",len(ps))
