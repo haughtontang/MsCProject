@@ -17,6 +17,12 @@ import numpy as np
 multi1 = um.peak_creator('multi 1 ms2.csv',"multi1_ms2.MGF")
 multi2 = um.peak_creator('multi 2 ms2.csv',"multi2_ms2.MGF")
 
+all_time = []
+
+for i in multi2:
+    
+    all_time.append(i.rt)
+
 #Sort by intensity
 
 multi1.sort(key = lambda x: x.intensity)
@@ -27,7 +33,7 @@ multi2.sort(key = lambda x: x.intensity)
 #multi1 = um.most_sig_peaks(multi1, 5e6)
 #multi2 = um.most_sig_peaks(multi2, 5e6)
 
-pps = ps.align(multi1, multi2)
+pps = ps.align(multi1, multi2,0.025)
 
 peaksets = ps.make_peaksets(pps)
 
@@ -53,7 +59,7 @@ rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
 '''
 import numpy as np
 
-X = multi1_rt
+X = multi2_rt
 Y = rt_minus
 
 #This is needed to make it an array/2d list so it can be used in the guassian
@@ -61,22 +67,101 @@ Y = rt_minus
 #Imports
 #Create peakset objects and match them
 
-X = np.array(multi1_rt).reshape(len(multi1_rt),1)
+X = np.array(multi2_rt).reshape(len(multi2_rt),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
-#Increase the lengthscale to improve the gp so it can learn something
+#variables for var and LS
 
-#100 is probably a bit too high but it does give a much nice shape- will investigate later
+variance = 1
+ls = 10
 
-kernel = GPy.kern.RBF(input_dim=1, variance=1. , lengthscale=100.)
+#Empty list to store the results
+
+results = []
+
+
+while variance <2:
+    
+    while ls < 140:
+        
+        multi1 = um.peak_creator('multi 1 ms2.csv',"multi1_ms2.MGF")
+        multi2 = um.peak_creator('multi 2 ms2.csv',"multi2_ms2.MGF")
+        
+        all_time = []
+        
+        for i in multi2:
+            
+            all_time.append(i.rt)
+        
+        #Sort by intensity
+        
+        multi1.sort(key = lambda x: x.intensity)
+        multi2.sort(key = lambda x: x.intensity)
+        
+        kernel = GPy.kern.RBF(input_dim=1, variance= variance, lengthscale= ls)
+        m = GPy.models.GPRegression(X,Y, kernel = kernel)    
+
+        all_time = np.array(all_time).reshape(len(all_time),1)
+
+        mean, var = m.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
+
+        #convert from np array to list
+        
+        mean = list(mean.flatten())
+        #Alter the RT of the peaks
+        
+        um.correct_rt(multi2, mean)
+        
+        #match PS again
+        
+        pseuo = ps.align(multi1, multi2, 0.33333)
+        peak_sets = ps.make_peaksets(pseuo)
+        
+        num_of_ps = len(peak_sets)
+        
+        tup = (variance, ls, num_of_ps)
+        
+        results.append(tup)
+        
+        ls += 2
+        
+    variance+=0.1
+    
+    
+#sort it
+
+results.sort(key=lambda tup: tup[2])
+
+head = results[:20]
+
+print(head)
+        
+'''        
+#Make the model
 
 m = GPy.models.GPRegression(X,Y, kernel = kernel)
 
+#Convert all the times in from file2 into a numpy array so itll work in the predict function
+
+all_time = np.array(all_time).reshape(len(all_time),1)
+
+#returns mean and variance so need two variables for that
+
+mean, var = m.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
+
+#printed to test and it works
+
+print(len(mean))
+print(len(var))
 #Ruining gp so comment out for now
 
 #m.optimize_restarts(num_restarts=8)
 
-m.plot()
+#m.plot()
+
+#print(kernel)
+print(m)
+'''
 
 
 
