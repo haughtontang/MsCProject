@@ -45,12 +45,15 @@ def create_params(peak_file1, peak_file2, ms2_validation, mgf_path1, mgf_path2):
     multi1.sort(key = lambda x: x.intensity)
     multi2.sort(key = lambda x: x.intensity)
     
+    #multi1 = um.most_sig_peaks(multi1, 5e6)
+    #multi2 = um.most_sig_peaks(multi2, 5e6)
+    
     #For the model we want high quality matching peaksets so the RT threshold is
-    #Set to only 1 second
+    #Set to only 1.5 seconds
     
     pps = ps.align(multi1, multi2,1.5)
     
-    #Create peakset objects
+    #Create a list of peakset objects
     
     peaksets = ps.make_peaksets(pps)
     
@@ -86,7 +89,7 @@ def create_params(peak_file1, peak_file2, ms2_validation, mgf_path1, mgf_path2):
     
     return X, Y
 
-def make_kernel(variance, ls):
+def make_kernel(v, ls):
     '''
     Parameters
     ----------
@@ -99,7 +102,7 @@ def make_kernel(variance, ls):
 
     '''
     
-    return GPy.kern.RBF(input_dim=1, variance= variance, lengthscale= ls)
+    return GPy.kern.RBF(input_dim=1, variance= v, lengthscale= ls)
 
 def make_model(X, Y, kernel):
     
@@ -143,20 +146,20 @@ def correct_rt(X, Y, filepath_to_match, filepath_to_correct, RT_tolerance):
     
     #Variables to be incremented in the loop
     
-    variance = 0.1
-    ls = 20
+    variance = 1
+    ls = 10
     
-    while variance <50:
+    while variance <10:
     
         while ls < 150:
         
-            file_to_correct = um.peak_creator(filepath_to_correct)
             file_to_match = um.peak_creator(filepath_to_match)
+            file_to_correct = um.peak_creator(filepath_to_correct)
             
             #Sort by intensity
             
-            file_to_correct.sort(key = lambda x: x.intensity)
             file_to_match.sort(key = lambda x: x.intensity)
+            file_to_correct.sort(key = lambda x: x.intensity)
             
             #List of times from the file to corrected, needed as an input for the GP predict
             
@@ -190,7 +193,7 @@ def correct_rt(X, Y, filepath_to_match, filepath_to_correct, RT_tolerance):
             
             #match PS again
             
-            pseuo = ps.align(file_to_match, file_to_correct, 5)
+            pseuo = ps.align(file_to_match, file_to_correct, RT_tolerance)
             peak_sets = ps.make_peaksets(pseuo)
             
             #Get the length of the peakset list- lower is better as that means we have more matches
@@ -248,6 +251,6 @@ def main(filepath_to_match, filepath_to_correct, ms2_validation, mgf_path1, mgf_
     
     return best_var, best_ls, best_ps
 
-main('multi 1 ms2.csv','multi 2 ms2.csv',True, "multi1_ms2.MGF","multi2_ms2.MGF",5)
+x,y,z = main('multi 1 ms2.csv','multi 2 ms2.csv',True, "multi1_ms2.MGF","multi2_ms2.MGF",20)
 
 print("var: ", x, "lengthscale: ", y, "peaksets: ", len(z))
