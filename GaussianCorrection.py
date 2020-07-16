@@ -12,12 +12,13 @@ import numpy as np
 
 #Method for creating numpy arrays that are needed for the model
 
-def create_params(peak_file1, peak_file2):
+def create_params(peak_file1, peak_file2, ms2_validation, mgf_path1, mgf_path2):
     '''
     Parameters
     ----------
     peak_file1 : file path for a picked peak file
     peak_file2 : file path for a picked peak file
+    ms2_validation: boolean- select True if matched peaksets require MS2 validation
     DESCRIPTION: Takes a file path, creats a list of peak objects, matches then to
     create peaksets, extracts the RTs, converts to numpy arrays; ready to be
     used to create a GP model
@@ -32,6 +33,13 @@ def create_params(peak_file1, peak_file2):
     multi1 = um.peak_creator(peak_file1)
     multi2 = um.peak_creator(peak_file2)
     
+    #Assign ms2 spectra if user requires it
+    
+    if ms2_validation == True:
+    
+        um.assign_ms2(mgf_path1, multi1)
+        um.assign_ms2(mgf_path2, multi2)
+    
     #Sort by intensity
     
     multi1.sort(key = lambda x: x.intensity)
@@ -40,23 +48,36 @@ def create_params(peak_file1, peak_file2):
     #For the model we want high quality matching peaksets so the RT threshold is
     #Set to only 1 second
     
-    pps = ps.align(multi1, multi2,0.025)
+    pps = ps.align(multi1, multi2,1.5)
     
     #Create peakset objects
     
     peaksets = ps.make_peaksets(pps)
     
-    #Again, we want high quality peaksets so we want to validate them by their MS2 spectra
+    #we want high quality peaksets so we want to validate them by their MS2 spectra
+    #Only if the user requires it
     
-    ms2_validated_peaksets = ps.ms2_comparison(peaksets)
+    if ms2_validation == True:
     
-    #Extract the RT from the Matched peaksets that are validated by m/z, rt and MS2
+        ms2_validated_peaksets = ps.ms2_comparison(peaksets)
     
-    multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
-    
-    #Creates the RT minus list that is needed to build the model
-    
-    rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+        #Extract the RT from the Matched peaksets that are validated by m/z, rt and MS2
+        
+        multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
+        
+        #Creates the RT minus list that is needed to build the model
+        
+        rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+        
+    else:
+        
+        #Extract the RT from the Matched peaksets that are validated by m/z, rt and MS2
+        
+        multi1_rt, multi2_rt = plot.rt_extract_convert(peaksets)
+        
+        #Creates the RT minus list that is needed to build the model
+        
+        rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
     
     #The model requires numpy arrays for its argument, numpy is used here to convert the list of RTs to arrays
     
@@ -98,7 +119,7 @@ def make_model(X, Y, kernel):
     
     return GPy.models.GPRegression(X,Y, kernel = kernel)   
 
-def correct_rt(X, Y, file_to_correct, file_to_match, RT_tolerance):
+def correct_rt(X, Y, filepath_to_match, filepath_to_correct, RT_tolerance):
     
     '''
     Parameters
@@ -123,14 +144,14 @@ def correct_rt(X, Y, file_to_correct, file_to_match, RT_tolerance):
     #Variables to be incremented in the loop
     
     variance = 0.1
-    ls = 10
+    ls = 20
     
-    while variance <2:
+    while variance <50:
     
-        while ls < 140:
+        while ls < 150:
         
-            file_to_correct = um.peak_creator(file_to_correct)
-            file_to_match = um.peak_creator(file_to_match)
+            file_to_correct = um.peak_creator(filepath_to_correct)
+            file_to_match = um.peak_creator(filepath_to_match)
             
             #Sort by intensity
             
@@ -206,14 +227,27 @@ def correct_rt(X, Y, file_to_correct, file_to_match, RT_tolerance):
     
     #Get each value as its own variable
     
-    for i in most_optimum:
-        
-        best_var = i[0]
-        best_ls = i[1]
-        best_ps = i[3]
-        
+    best_var, best_ls, ps_num, best_ps = most_optimum
+    
     #return these variables
     
     return best_var, best_ls, best_ps
+
+
+def main(filepath_to_match, filepath_to_correct, ms2_validation, mgf_path1, mgf_path2, RT_tolerance):
+
+    X, Y = create_params(filepath_to_match, filepath_to_correct, ms2_validation, mgf_path1, mgf_path2)
     
+    #k = make_kernel(50,150)
     
+    #m = make_model(X,Y, k)
+    
+    #m.plot()
+
+    best_var, best_ls, best_ps = correct_rt(X, Y, filepath_to_match, filepath_to_correct, RT_tolerance)    
+    
+    return best_var, best_ls, best_ps
+
+main('multi 1 ms2.csv','multi 2 ms2.csv',True, "multi1_ms2.MGF","multi2_ms2.MGF",5)
+
+print("var: ", x, "lengthscale: ", y, "peaksets: ", len(z))
