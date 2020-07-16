@@ -9,7 +9,7 @@ import csv
 from PeakTools import Peak
 import SimilarityCalc as sc
 
-def peak_creator (file_path, mgf_path):
+def peak_creator (file_path):
     
     '''
     Parameters
@@ -50,20 +50,41 @@ def peak_creator (file_path, mgf_path):
         rt = float(row[2])
         height =  float(row[3])
         
+        #Convert RT to seconds
+        
         rt = rt *60
         
         #Now that its properly formatted as the proper type put it into a list
         
         peaks.append(Peak(key, mz, rt, height, file_path, None))
         
+    return peaks
+
+def assign_ms2(mfg_file_path, peak_list):
+    
+    '''
+    Parameters
+    ----------
+    mfg_file_path : File path to an mfg file
+    peak_list: list of peak objects
+    DESCRIPTION: Creates spectrum objects from the MFG file, it will then loop
+    through the peak object list and if the ID of the specrum object matches
+    the Peak objects ID; that spectrum object is assiged as the Peaks ms2 attribute
+    
+    Returns
+    -------
+    None.
+
+    '''
+
     #Create a list of spectra objects- representing an MS2 specra
     
-    spectra = sc.mgf_reader(mgf_path)
+    spectra = sc.mgf_reader(mfg_file_path)
     
     #Match the spectra objects to peak objects by their ID- if a match is found
     #alter the ms2 attribute in peak to be equal to the spectra object
     
-    for peak in peaks:
+    for peak in peak_list:
         
         #Get the id of the peak
         
@@ -84,9 +105,6 @@ def peak_creator (file_path, mgf_path):
             if key == ms2_id:
                 
                 peak.ms2 = ms2
-        
-    return peaks
-
 
 def most_sig_peaks(peak_obj_list, value):
         
