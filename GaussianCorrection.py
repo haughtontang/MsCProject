@@ -234,7 +234,7 @@ def correct_rt(X, Y, filepath_to_match, filepath_to_correct, RT_tolerance):
     
     #return these variables
     
-    return best_var, best_ls, best_ps
+    return results
 
 
 def main(filepath_to_match, filepath_to_correct, ms2_validation, mgf_path1, mgf_path2, RT_tolerance):
@@ -247,10 +247,14 @@ def main(filepath_to_match, filepath_to_correct, ms2_validation, mgf_path1, mgf_
     
     #m.plot()
 
-    best_var, best_ls, best_ps = correct_rt(X, Y, filepath_to_match, filepath_to_correct, RT_tolerance)    
+    res = correct_rt(X, Y, filepath_to_match, filepath_to_correct, RT_tolerance)    
     
-    return best_var, best_ls, best_ps
+    return res[:50]
 
-x,y,z = main('multi 1 ms2.csv','multi 2 ms2.csv',True, "multi1_ms2.MGF","multi2_ms2.MGF",20)
+resu = main('multi 1 ms2.csv','multi 2 ms2.csv',True, "multi1_ms2.MGF","multi2_ms2.MGF",20)
+for i in resu:
+    
+    best_var, best_ls, ps_num, ps = i
 
-print("var: ", x, "lengthscale: ", y, "peaksets: ", len(z))
+    print("var: ", best_var, "Lengthscale: ", best_ls, "PS num: " ,ps_num)
+#print("var: ", x, "lengthscale: ", y, "peaksets: ", len(z))
