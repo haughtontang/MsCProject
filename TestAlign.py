@@ -9,11 +9,11 @@ import UsefulMethods as um
 from PeakTools import Peak as p
 from PeakTools import Plotter as plot
 #test = um.peak_creator("D:/Users/donha/Documents/MastersProject/Practice Python/reduced_multi_1_full.csv", "")
-p1 = um.peak_creator('multi 1 ms2.csv', "multi1_ms2.MGF")
-p2 = um.peak_creator('multi 2 ms2.csv', "multi2_ms2.MGF")
+p1 = um.peak_creator('multi 1 ms2.csv')
+p2 = um.peak_creator('multi 2 ms2.csv')
 
-#p1 = p.peak_storage(f1)
-#p2 = p.peak_storage(f2)
+um.assign_ms2("multi1_ms2.MGF", p1)
+um.assign_ms2("multi2_ms2.MGF", p2)
 
 #Can sort peaks this way using pythons inbuilt functions
 
@@ -245,7 +245,7 @@ def align(peak_obj_list, another_peak_obj_list):
 
     return list_of_lists
 
-pps = ps.align(p1,p2, 1.5)
+pps = ps.align(p1,p2, 1)
 print("pseudo peakset length = ", len(pps))
 ps = ps.make_peaksets(pps)
 print("peakset length = ",len(ps))
@@ -631,14 +631,14 @@ def ms2_matching(combined):
     
     return highly_likely_matches
 
-ms2_validated_peaksets = ms2_comparison(ps)
+#ms2_validated_peaksets = ms2_comparison(ps)
 
 #Result = 43. It actually works. Keep in mind that this for the full file- no intensity filter applied.
 
 #print(len(test))
 
 
-rt1, rt2 = plot.rt_extract_convert(ms2_validated_peaksets)
+rt1, rt2 = plot.rt_extract_convert(ps)
 
 print(len(rt1),len(rt2))
         
@@ -648,6 +648,37 @@ diff = plot.rt_minus_rt_plot(rt1, rt2)
 
 diff.sort(key=float, reverse=True)
 
+
+#Bellow is just a test of of um.correct_rt() method
+
+#Its working as expected so no dramas there
+
+'''
+
+print("original times:   ")
+
+p2 = p2[:10]
+
+for peak in p2:
+    
+    print(peak.get_rt())
+
+times = []
+i = 0
+while i < len(p2):
+    up = 2
+    times.append(up)
+    
+    i+=1
+
+um.correct_rt(p2, times)
+    
+print("updated times:   ")
+
+for peak in p2:
+    
+    print(peak.get_rt())
+
 #print(diff)
 
 #plot(rt1,diff,"RT difference for peaks matched by m/z, rt and MS2 spectra","","",False)
@@ -656,7 +687,7 @@ diff.sort(key=float, reverse=True)
 
 
 
-
+'''
 
 
             

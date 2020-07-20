@@ -14,8 +14,11 @@ import numpy as np
 
 #Import and make peaks
 
-multi1 = um.peak_creator('multi 1 ms2.csv',"multi1_ms2.MGF")
-multi2 = um.peak_creator('multi 2 ms2.csv',"multi2_ms2.MGF")
+multi1 = um.peak_creator('multi 1 ms2.csv')
+multi2 = um.peak_creator('multi 2 ms2.csv')
+
+um.assign_ms2("multi1_ms2.MGF", multi1)
+um.assign_ms2("multi2_ms2.MGF", multi2)
 
 all_time = []
 
@@ -73,7 +76,7 @@ Y = np.array(rt_minus).reshape(len(rt_minus),1)
 #variables for var and LS
 
 variance = 1
-ls = 10
+ls = 30
 
 #Empty list to store the results
 
@@ -82,10 +85,12 @@ results = []
 
 while variance <2:
     
-    while ls < 140:
+    while ls < 80:
         
-        multi1 = um.peak_creator('multi 1 ms2.csv',"multi1_ms2.MGF")
-        multi2 = um.peak_creator('multi 2 ms2.csv',"multi2_ms2.MGF")
+        multi1 = um.peak_creator('multi 1 ms2.csv')
+        multi2 = um.peak_creator('multi 2 ms2.csv')
+        um.assign_ms2("multi1_ms2.MGF", multi1)
+        um.assign_ms2("multi2_ms2.MGF", multi2)
         
         all_time = []
         
@@ -114,7 +119,7 @@ while variance <2:
         
         #match PS again
         
-        pseuo = ps.align(multi1, multi2, 1.5)
+        pseuo = ps.align(multi1, multi2, 1)
         peak_sets = ps.make_peaksets(pseuo)
         
         num_of_ps = len(peak_sets)
@@ -123,7 +128,7 @@ while variance <2:
         
         results.append(tup)
         
-        ls += 2
+        ls = (ls/1.2) *1.5
         
     variance+=1
     
@@ -132,10 +137,45 @@ while variance <2:
 
 results.sort(key=lambda tup: tup[2])
 
-head = results[:20]
+for i in results:
+    
+    print(i)
 
-print(head)
+
+head = results[0]
+
+
+    
+best_var, best_ls, ps_num = head
+
+print("var: ", best_var, "Lengthscale: ", best_ls, "PS num: " ,ps_num)
+
+
+'''
+k = GPy.kern.RBF(input_dim=1, variance= 1, lengthscale= 700)
+m = GPy.models.GPRegression(X,Y, kernel = k)    
+m.plot()
+all_time = []
         
+for i in multi2:
+    
+    all_time.append(i.rt)
+    
+all_time = np.array(all_time).reshape(len(all_time),1)
+mean, var = m.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
+mean = list(mean.flatten())
+#Alter the RT of the peaks
+
+um.correct_rt(multi2, mean)
+
+#match PS again
+
+pseuo = ps.align(multi1, multi2, 1)
+peak_sets = ps.make_peaksets(pseuo)
+
+num_of_ps = len(peak_sets)
+print(num_of_ps)
+'''
 '''        
 #Make the model
 
