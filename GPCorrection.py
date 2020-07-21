@@ -21,7 +21,6 @@ import GPy
 from PeakTools import PeakSet as ps
 from PeakTools import Plotter as plot
 import UsefulMethods as um
-import SimilarityCalc as sc
 import numpy as np
 
 def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf_path1, mgf_path2, RT_tolerance):
@@ -29,8 +28,10 @@ def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf
     multi1 = um.peak_creator(filepath_to_match)
     multi2 = um.peak_creator(filepath_to_correct)
     
-    um.assign_ms2(mgf_path1, multi1)
-    um.assign_ms2(mgf_path2, multi2)
+    if ms2_validation == True:
+    
+        um.assign_ms2(mgf_path1, multi1)
+        um.assign_ms2(mgf_path2, multi2)
     
     #Sort by intensity
     
@@ -41,11 +42,19 @@ def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf
     
     peaksets = ps.make_peaksets(pps)
     
-    ms2_validated_peaksets = ps.ms2_comparison(peaksets)
+    if ms2_validation == True:
     
-    multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
+        ms2_validated_peaksets = ps.ms2_comparison(peaksets)
     
-    rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+        multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
+    
+        rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+        
+    else:
+        
+        multi1_rt, multi2_rt = plot.rt_extract_convert(peaksets)
+    
+        rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
     
     #This is needed to make it an array/2d list so it can be used in the guassian
     
@@ -88,7 +97,7 @@ def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf
         
         #match PS again
         
-        pseuo = ps.align(multi1, multi2, 1)
+        pseuo = ps.align(multi1, multi2, RT_tolerance)
         peak_sets = ps.make_peaksets(pseuo)
         
         num_of_ps = len(peak_sets)
@@ -107,7 +116,7 @@ def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf
     
     return results
 
-resu = GP_optimization('multi 1 ms2.csv','multi 2 ms2.csv',True, "multi1_ms2.MGF","multi2_ms2.MGF",1)
+resu = GP_optimization('reduced_multi_1_full.csv','reduced_multi_2_full.csv',False, "","",1)
 
 for i in resu:
     
