@@ -22,16 +22,16 @@ from PeakTools import PeakSet as ps
 from PeakTools import Plotter as plot
 import UsefulMethods as um
 import numpy as np
+import SimilarityCalc as sc
 
-def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf_path1, mgf_path2, RT_tolerance):
+def GP_optimization(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2, RT_tolerance):
 
     multi1 = um.peak_creator(filepath_to_match)
     multi2 = um.peak_creator(filepath_to_correct)
     
-    if ms2_validation == True:
     
-        um.assign_ms2(mgf_path1, multi1)
-        um.assign_ms2(mgf_path2, multi2)
+    um.assign_ms2(mgf_path1, multi1)
+    um.assign_ms2(mgf_path2, multi2)
     
     #Sort by intensity
     
@@ -42,20 +42,16 @@ def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf
     
     peaksets = ps.make_peaksets(pps)
     
-    if ms2_validation == True:
+    ms2_validated_peaksets = ps.ms2_comparison(peaksets)
     
-        ms2_validated_peaksets = ps.ms2_comparison(peaksets)
+    og_score = check_correction_quality(ms2_validated_peaksets)
     
-        multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
-    
-        rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+    original_score = np.mean(og_score)
+
+    multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
+
+    rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
         
-    else:
-        
-        multi1_rt, multi2_rt = plot.rt_extract_convert(peaksets)
-    
-        rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
-    
     #This is needed to make it an array/2d list so it can be used in the guassian
     
     #Imports
@@ -100,15 +96,35 @@ def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf
         pseuo = ps.align(multi1, multi2, RT_tolerance)
         peak_sets = ps.make_peaksets(pseuo)
         
+        peak_sets = ps.ms2_comparison(peak_sets)
+        
         num_of_ps = len(peak_sets)
         
-        tup = (variance, ls, num_of_ps)
+        scores = check_correction_quality(peak_sets)
+        
+        avg_score = np.mean(scores)
+        
+        h_or_l = ""
+        
+        if avg_score > original_score:
+            
+            h_or_l = "Higher"
+            
+        else:
+            
+            h_or_l = "Lower"
+        
+        tup = (variance, ls, num_of_ps, original_score, avg_score, h_or_l)
         
         results.append(tup)
         
         #Reset the PS list to be corrected
         
-        multi2 = um.peak_creator('multi 2 ms2.csv')
+        multi2 = um.peak_creator(filepath_to_correct)
+        um.assign_ms2(mgf_path2, multi2)
+        
+        scores = []
+        avg_score = 0
         
         ls = (ls/1.2) *1.5
     
@@ -116,10 +132,57 @@ def GP_optimization (filepath_to_match, filepath_to_correct, ms2_validation, mgf
     
     return results
 
-resu = GP_optimization('reduced_multi_1_full.csv','reduced_multi_2_full.csv',False, "","",1)
+def check_correction_quality(list_of_peaksets):
+    
+    scores = []
+    
+    for sets in list_of_peaksets:
+            
+        #We're only looking to compare matched peaksets so look for peaksets having >1 peaks making up the peakset
+        
+        if len(sets.peaks) > 1:
+            
+            #Empty list to store the spectrum objects that are an attribute of Peak objects
+            
+            ms2 = []
+            
+            #Loop over the peak list in peakset
+        
+            for peak in sets.peaks:
+                
+                #Not all peak objects have an ms2 attrbute so this checks for those that do
+                
+                if peak.ms2 != None:
+                    
+                    #If one is found add it to the ms2 list
+                    
+                    ms2.append(peak.ms2)
+            
+            '''
+            Of the matched peaks, some may have an ms2 spectrum whilst the others dont, by ensuring
+            that the ms list is larger than 1 and there are no null values we can check the similarity
+            score of both the spectra
+            '''
+            
+            if len(ms2) > 1 and None not in ms2:
+                
+                '''
+                The function that checks the similarity takes a list of spectrum objects
+                As its argument and returns a similarity score
+                If this score is above the treshold then the peaks match on m/z,rt and ms2-
+                Append that peakset to the list at the beginning of the function
+                '''
+                
+                spectra_similarity = sc.similarity_score(ms2)
+                
+                scores.append(spectra_similarity)
+                
+    return scores
+
+resu = GP_optimization('multi 1 ms2.csv','multi 2 ms2.csv', "multi1_ms2.MGF","multi2_ms2.MGF",1.5)
 
 for i in resu:
     
-    best_var, best_ls, ps_num = i
+    best_var, best_ls, ps_num, ogs, avgs, h_or_l = i
 
-    print("var: ", best_var, "Lengthscale: ", best_ls, "PS num: " ,ps_num)
+    print("var: ", best_var, "Lengthscale: ", best_ls, "PS num: " ,ps_num, "OG Score : ", ogs, "Avg Score: ", avgs, "New score higher or lower?: ", h_or_l)
