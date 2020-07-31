@@ -371,12 +371,13 @@ class PeakSet(object):
     
     #Find ms2 spectra in a list of peaksets and compare
     
-    def ms2_comparison(peakset_list):
+    def ms2_comparison(peakset_list, similarity_tol):
         
         '''
         Parameters
         ----------
         peakset_list : List of Peakset objects
+        similarity_tol: Float that cant be greater than 1.0
         DESCRIPTION: Loops over the list of peaks in peaksets- find peaksets that
         match and that have ms2 spectra. Once they are found a method is called to check
         the similarity score between the 2. If it is above a certain score threshold it
@@ -432,13 +433,12 @@ class PeakSet(object):
                     
                     spectra_similarity = sc.similarity_score(ms2)
                     
-                    if spectra_similarity > 0.9:
+                    if spectra_similarity > similarity_tol:
                         
                         ms2_comp.append(ps)
                         
         return ms2_comp
-   
-          
+              
 import matplotlib.pyplot as plt
 
 class Plotter(object):

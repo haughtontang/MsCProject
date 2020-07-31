@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 30 23:47:01 2020
+Created on Mon Jul 20 12:50:15 2020
 
 @author: Don Haughton
 """
+
+'''
+What do I need this method to do?
+
+We need to have a set value for the LS then incrememnt that within some limit
+Thats then used to make a kernel, then a model
+That model makes predictions
+the predictions are used to update the peak objects
+they are aligned again
+#ps and ls recorded
+ls incrmeented and repeat 
+'''
 
 import GPy
 from PeakTools import PeakSet as ps
@@ -11,8 +23,81 @@ import UsefulMethods as um
 from PeakTools import Plotter as plot
 import numpy as np
 import SimilarityCalc as sc
+import random
+
+def random_ms2(peak_list):
+              
+    #This method is just for testing the optimization thing bellow
+    
+    #It will randomly assign MS2 spectrum objects to aligned peaksets in attempt to generate false +ves
+    
+    random_list = []
+    
+    limit = len(peak_list)
+
+    for i in range(0, limit):
         
-def GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun):
+        n = random.randint(0,limit)
+        
+        random_list.append(n)
+    
+    for peak in peak_list:
+        
+        index = random.randint(0, limit-1)
+        
+        new_id = random_list[index]
+        
+        peak.id = new_id
+
+def randomize_ms2(mgf_path, mgf_path_otherfile, peakset_list):
+    '''
+    Parameters
+    ----------
+    mgf_path : File path to an mgf file corresponding to a picked peak file
+    mgf_path_otherfile : mgf file path corresponding to a seperate picked peak file
+    peakset_list : List of peakset objects
+    
+    DESCRIPTION: The function will extract peaksets that have greater than 1
+    peak into a seperate list. 2 lists of spectrum objects are created using the 
+    file paths. By using a random number generator and looping over the extarcted
+    list of peaksets; the function randomly assigns ms2 spectrum objects to the
+    peaks contained within the peakset.
+
+    By doing this only on matching peaksets, we are able to increase the rate
+    of a false +ve being generated.
+    
+    Returns
+    -------
+    The same list of peaksets provided in the argument but with randomized 
+    ms2 spectra.
+    '''
+
+    spectra1 = sc.mgf_reader(mgf_path)
+    spectra2 = sc.mgf_reader(mgf_path_otherfile)
+    
+    index1 = random.randint(0,len(spectra1))
+    index2 = random.randint(0,len(spectra2))
+    
+    for i in peakset_list:
+        
+        if len(i.peaks) > 1:
+        
+            for j in i.peaks:
+                
+                index1 = random.randint(0,len(spectra1)-1)
+                index2 = random.randint(0,len(spectra2)-1)
+                
+                if j.get_file() =='multi 1 ms2.csv':
+        
+                    j.ms2 = spectra1[index1]
+                    
+                else:
+                    
+                    j.ms2 = spectra2[index2]
+                    
+    return peakset_list
+        
+def GP_optimization(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2):
     
     '''
     Parameters
@@ -34,29 +119,60 @@ def GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun):
     var : Float- optimal variance of the GP model
     ls : Float- optimal lengthscale of the GP model
     '''
+
+    #Creating the Peak objects and assigning their MS2 spectra
+
+    multi1 = um.peak_creator(filepath_to_match)
+    multi2 = um.peak_creator(filepath_to_correct)
+    
+    um.assign_ms2(mgf_path1, multi1)
+    um.assign_ms2(mgf_path2, multi2)
+    
+    #Sort by intensity
+    
+    multi1.sort(key = lambda x: x.intensity)
+    multi2.sort(key = lambda x: x.intensity)
+    
     #Align the peak objects 
     
-    pps = ps.align(list_of_peaks_firstrun, list_of_peaks_liverun,1.5)
+    pps = ps.align(multi1, multi2,1.5)
     
     #Create peakset objects from this alignment
     
     peaksets = ps.make_peaksets(pps)
     
-    #create anchors
+    #Scan these peaksets and find those that match by their MS2 spectra
     
-    anchors = ps.ms2_comparison(peaksets, 0.9)
+    ms2_validated_peaksets = ps.ms2_comparison(peaksets, 0.9)
     
+    #Of these MS2 validated anchors, find the scores of their comparisons and make a rounded average
+    #This will be used to compare to the newly corrected peaksets that will be created bellow
+    
+    og_score = check_correction_quality(ms2_validated_peaksets)
+    
+    original_low_score_count = 0
+    
+    for score in og_score:
+        
+        if score < 0.9:
+            
+            original_low_score_count +=1
+    
+    #original_score = np.mean(og_score)
+    
+    #original_score = round(original_score, 5)
+
     #Extract the RT of the anchors created above
 
-    rt1, rt2 = plot.rt_extract_convert(anchors)
+    multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
 
     #Get the values of RT-RT from the 2 files respectively, this will be used to make the GP model
 
-    rt_minus = plot.rt_minus_rt_plot(rt1, rt2)
+    rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
         
     #Need to make it the list into an array so it can be used in the GP
     
-    X = np.array(rt2).reshape(len(rt2),1)
+    X = np.array(multi2_rt).reshape(len(multi2_rt),1)
     Y = np.array(rt_minus).reshape(len(rt_minus),1)
     
     #variables for var and LS
@@ -92,10 +208,10 @@ def GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun):
     #To correct the RT, a numpy array of times must be passed to the models predict function. 
     #This step bellow achieves this by extracting the time and appending it into a list
     
-    for peak in list_of_peaks_liverun:
+    for i in multi2:
         
-        all_time.append(peak.get_rt())
-                
+        all_time.append(i.get_rt())
+        
     all_time = np.array(all_time).reshape(len(all_time),1)
 
     '''
@@ -107,13 +223,15 @@ def GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun):
     (based on the newly created ms2 validated peaksets) are recorded in a tuple which is stored in a list
     '''
 
-    for var in variance:
+    #RT_tolerances = [1.5, 10,20, 50, 75, 100]
+
+    for i in variance:
         
-        for leng in ls:
+        for j in ls:
             
             #Set up kernel and model objects using Gpy
             
-            kernel = GPy.kern.RBF(input_dim=1, variance= var, lengthscale= leng)
+            kernel = GPy.kern.RBF(input_dim=1, variance= i, lengthscale= j)
             m = GPy.models.GPRegression(X,Y, kernel = kernel)    
 
             #Store the mean and variance predicitons from the model. The times extracted from the file_to_corect are passed to this function
@@ -126,29 +244,41 @@ def GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun):
             
             #This method corrects the RT of the file_to_correct by adding the predictions (mean) produced by the model
             
-            um.correct_rt(list_of_peaks_liverun, mean)
-                            
+            um.correct_rt(multi2, mean)
+            
+            #for time in RT_tolerances:
+                
             #Align PS again
         
-            pseudo = ps.align(list_of_peaks_firstrun, list_of_peaks_liverun, 1.5)
-            peak_sets = ps.make_peaksets(pseudo)
+            pseuo = ps.align(multi1, multi2, 1.5)
+            peak_sets = ps.make_peaksets(pseuo)
             num_of_ps = len(peak_sets)
-            
-            #Get the number of ms2 matching peaksets
+            #Get the number of ms2 matching peaksets under normal circumstances
             
             ms2_peak_sets = ps.ms2_comparison(peak_sets, 0)
             
+            #Randomize peaksets
+            
+            random_ms2(peak_sets)
+            
+            #Align PS again with randomized IDs
+        
+            pseuo = ps.align(multi1, multi2, 1.5)
+            peak_sets = ps.make_peaksets(pseuo)
+            
+            random_ms2_peaksets = ps.ms2_comparison(peak_sets, 0)
+            
+            #Record the number of PS produced
+            
+            #num_of_ps = len(peak_sets)
+            
             num_of_ms2 = len(ms2_peak_sets)
-                        
+            
+            num_random_ms2 = len(random_ms2_peaksets)
+            
             #This method returns a list of similarity scores for the ms2 matched PS produced from corrected RT
             
             scores = check_correction_quality(peak_sets)
-            
-            '''
-            To assess the quality of MS2 matches created these score counts monitor
-            The quality of the corrections. Scores bellow 0.9 and scores of zero
-            are all recoreded
-            '''
             
             low_score_count = 0
             
@@ -163,18 +293,31 @@ def GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun):
                 if s == 0:
                     
                     zero_score_count += 1
+        
+            #Create an average of these scores and round the value
+        
+            #avg_score = np.mean(scores)
+            
+            #avg_score = round(avg_score, 5)
             
             #Store the values in a tuple to track the results
             
-            tup = (var, leng, num_of_ps, num_of_ms2, low_score_count, zero_score_count)
+            tup = (i, j, 1.5, num_of_ps, num_of_ms2, num_random_ms2, original_low_score_count, low_score_count, zero_score_count)
             
             #Append this tuple to a list
             
             results.append(tup)
             
+            #Reset the PS list to their original state for the next round of corrections
+            
+            multi1 = um.peak_creator(filepath_to_match)
+            um.assign_ms2(mgf_path1, multi1)
+            multi2 = um.peak_creator(filepath_to_correct)
+            um.assign_ms2(mgf_path2, multi2)
+
     #Sort the list in ascending order of peaksets
 
-    results.sort(key=lambda tup: tup[2])
+    results.sort(key=lambda tup: tup[3])
     
     '''
     This function bellow will return the most optimum LS and Variance. A sizeable spread of Ls and variance
@@ -185,7 +328,7 @@ def GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun):
     
     var, ls = picking_best_results(results)
     
-    return var, ls
+    return results, var, ls
 
 def check_correction_quality(list_of_peaksets):
     
@@ -273,7 +416,7 @@ def picking_best_results(results_list):
     
     #split the tuple into component variables
     
-    var, ls, top_result_num_ps, num_ms2, low_score, zero_score = top_result
+    var, ls, rt, top_result_num_ps, num_ms2,random_ms2,  score, avg_score, zero_score = top_result
     
     #Empty list to return at the end
     
@@ -285,17 +428,17 @@ def picking_best_results(results_list):
     
         #If the row in the list matches the lowest #ps appened it to the list
         
-        if result[2] == top_result_num_ps:
+        if result[3] == top_result_num_ps:
             
             list_of_the_best.append(result)
             
     #Sort this list based on the number of MS2 anchors created from the newly aligned ps
             
-    list_of_the_best.sort(key=lambda tup: tup[3], reverse=True)
+    list_of_the_best.sort(key=lambda tup: tup[4], reverse=True)
     
     #split the tuple for the best result of the newly organized list
     
-    var, ls, top_result_num_ps, num_ms2, low_score, zero_score = list_of_the_best[0]
+    var, ls, rt, top_result_num_ps, num_ms2, random_ms2,  score, avg_score, zero_score = list_of_the_best[0]
     
     '''
     This list is then loop over again now that its been sorted in descending order of #ms2 matching ps
@@ -305,7 +448,7 @@ def picking_best_results(results_list):
     
     for i in list_of_the_best:
         
-        if i[3] < num_ms2 or i[4] < low_score:
+        if i[4] < num_ms2 or i[7] < avg_score:
             
             list_of_the_best.remove(i)
     
@@ -321,7 +464,7 @@ def picking_best_results(results_list):
     
     for i in list_of_the_best:
         
-        var, ls, top_result_num_ps, num_ms2, low_score, zero_score = i
+        var, ls, rt, top_result_num_ps, num_ms2, random_ms2, score, avg_score, zero_score = i
         
         best_var.append(var)
         best_ls.append(ls)
@@ -333,3 +476,26 @@ def picking_best_results(results_list):
     best_ls.sort(key=float, reverse=True)
     
     return best_var[0], best_ls[0]
+    
+resu, var, ls = GP_optimization('multi 1 ms2.csv','multi 2 ms2.csv', "multi1_ms2.MGF","multi2_ms2.MGF")
+
+file = []
+
+for i in resu:
+    
+    best_var, best_ls, rt, ps_num, ms2_num, random_ms2_num, ogs, low, zero = i
+
+    line = "var: ", str(best_var), "Lengthscale: ", str(best_ls), "RT tol: ", str(rt), "PS num: " ,str(ps_num), "MS2 PS: ", str(ms2_num), "Randomized MS2 Num: ", str(random_ms2_num), "Anchor Low Score Count: ", str(ogs), "Scores < 0.9: ", str(low),"Scores = 0: ", str(zero)
+    file.append(line)
+    
+with open('rt tol 1 tol with randomized MS2 by id.txt', 'w') as f:
+    for item in file:
+        line = str(item)
+        f.write(line)
+        f.write("\n")
+        
+print(var, ls) 
+
+
+
+    

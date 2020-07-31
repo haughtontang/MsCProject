@@ -41,7 +41,7 @@ def peak_creator (file_path):
     #Loop over all the rows in the files, sroting the relevant information in variables to append to my empty list above
     
     for row in reader:
-        #row = [id, m/z, rt, row number, peak status, rt start, rt end, rt duration, peak height, peak area, data points]
+        #row = [id, m/z, rt, peak height]
         
         #Now that I know the types and the data lets format it
         

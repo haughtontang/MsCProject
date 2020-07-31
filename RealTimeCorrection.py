@@ -61,6 +61,11 @@ def incoming_peaks(real_time_run):
     
     first_file = first_run_peaks(filepath, mfg_path)
     
+    #sort these based on intensity
+    
+    first_file.sort(key = lambda x: x.intensity, reverse = True)
+    list_of_peaks.sort(key = lambda x: x.intensity, reverse = True)
+    
     #perform alignment
     
     ps = alignment(first_file, list_of_peaks)
@@ -77,7 +82,27 @@ def alignment(first_run_peaks, incoming_peaks):
     
     return peaksets
 
-def create_optimized_gp_model(peakset_list):
+def create_model(peakset_list, variance, lengthscale):
+    
+    anchors = ps.ms2_comparion(peakset_list)
+    
+    first_run_rt, incoming_rt = plot.rt_extract_convert(anchors)
+
+    #Get the values of RT-RT from the 2 files respectively, this will be used to make the GP model
+
+    rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+        
+    #Need to make it the list into an array so it can be used in the GP
+    
+    X = np.array(multi2_rt).reshape(len(incoming_rt),1)
+    Y = np.array(rt_minus).reshape(len(rt_minus),1)
+    
+    kernel = GPy.kern.RBF(input_dim=1, variance= variance, lengthscale= lengthscale)
+    model = GPy.models.GPRegression(X,Y, kernel = kernel)   
+    
+    return model
+
+def create_optimized_gp_model(list_of_peaks_firstrun, list_of_peaks_liverun):
     
     '''
     I can recycle the code I've written in GPCorrection.py
@@ -89,26 +114,46 @@ def create_optimized_gp_model(peakset_list):
     In its current state it return the best variance and LS to be used for the hyperparams
     Though I can adapt that so that it just returns the model. This model can then be used with other
     methods for correcting in real time.
+    
+    The variance and LS rarely change, so this function will only need to be
+    utilized once, after that the only thing that'll update the model will be the anchors
+    
+    Because of that i dont need it to return the model, ill need it to return the var and ls figures
     '''
     
-    # #make anchors
-    
-    # anchors = ps.ms2_comparion(peakset_list)
-    
-    # first_run_rt, incoming_rt = plot.rt_extract_convert(anchors)
+    return gpc.GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun)
 
-    # #Get the values of RT-RT from the 2 files respectively, this will be used to make the GP model
+def add_peak(peakset_list, peak):
+     '''
+     Parameters
+     ----------
+     peakset_list: list of peakset objects
+     peak : Peak Object
+     DESCRIPTION: searches for a match in a list of peaksets, if one is found 
+     then it is appended to that list
 
-    # rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
-        
-    # #Need to make it the list into an array so it can be used in the GP
-    
-    # X = np.array(multi2_rt).reshape(len(multi2_rt),1)
-    # Y = np.array(rt_minus).reshape(len(rt_minus),1)
+     Returns
+     -------
+     None
+     '''
+     
+     #Convert the peak into a list to be used in the alignment method of peakset
+     
+     peak = list(peak)
+     
+     for peakset in peakset_list:
+         
+         if len(peakset.peaks) <2:
+             
+             potential_match = peakset.peaks
+             
+             peakset = alignment(peak, potential_match)
+             
+     return peakset
 
 #This could be set up as a recursive method?
     
-def correct_rt(GP_model, real_time_run):
+def correct_rt(GP_model, real_time_run, ps_list):
     
     peak = um.peak_creator(real_time_run)
     
@@ -138,7 +183,15 @@ def correct_rt(GP_model, real_time_run):
     
     #Add peak method
     
+    new_ps_list = add_peak(ps_list, peak)
+    
     #if a match is found then perform alignment again
+    
+    if len(ps_list) != len(new_ps_list):
+        
+        model = create_model(new_ps_list, variance, lengthscale)
+        
+        
     
     #After the alignment has been performed call the create_optimized_gp_model function
     

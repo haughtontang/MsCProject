@@ -209,7 +209,43 @@ def similarity_score(spectra_list):
         
     return score
 
-   
+#Testing the possibility of different combinations
+
+list1 = mgf_reader("multi1_ms2.MGF")
+list2 = mgf_reader("multi2_ms2.MGF")
+
+low_score_count = 0
+zero_score_count = 0
+total_combinations = 0
+for i in list1:
+    
+    spec1 = i
+    
+    for j in list2:
+        
+        pair = []
+        spec2 = j
+        
+        pair.append(spec1)
+        pair.append(spec2)
+        
+        score = similarity_score(pair)
+        
+        total_combinations += 1
+        
+        if score < 0.9 and score > 0:
+            
+            low_score_count +=1
+            
+        if score == 0:
+            
+            zero_score_count +=1
+
+#Print the results
+
+#print("Total number of combinations: ", total_combinations)            
+#print("Scores lower than 0.9: ", low_score_count)
+#print("scores equal to 0: ", zero_score_count)
     
     
     

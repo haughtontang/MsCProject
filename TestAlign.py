@@ -14,6 +14,13 @@ p2 = um.peak_creator('multi 2 ms2.csv')
 
 um.assign_ms2("multi1_ms2.MGF", p1)
 um.assign_ms2("multi2_ms2.MGF", p2)
+count = 0
+for i in p2:
+    
+    if i.ms2 != None:
+        count+=1
+        
+print(count)
 
 #Can sort peaks this way using pythons inbuilt functions
 
