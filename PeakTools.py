@@ -443,7 +443,7 @@ import matplotlib.pyplot as plt
 
 class Plotter(object):
     
-    def __init__(self, x, y, title, xtitle, ytitle, show_lobf):
+    def __init__(self, x, y, title, xtitle, ytitle):
         
         '''
         Parameters
@@ -453,7 +453,6 @@ class Plotter(object):
         title: title for the plot
         xtitle: x-axis title
         ytitle: y-axis title
-        show_lobf: boolean: if true a line of best fit will be plotted with the plot
         DESCRIPTION: uses the 2 variables to produce a scatter plot
         Returns
         -------
@@ -461,59 +460,18 @@ class Plotter(object):
         '''
         #Variables for plot
 
-        colors = [[0,0,0]]
-        
-        #Get line of best fit
-        
-        self.a,self.b = 0.0, 0.0
+        #colors = [[0,0,0]]
     
         # Plot
         
-        plt.scatter(x, y, c=colors, alpha=1)
-        
-        #Calls the best_fit function to plot the line of best fit if true
-        
-        if show_lobf == True:
-        
-            yfit = [self.a + self.b * xi for xi in x]
-            plt.plot(x, yfit)
-        
+        plt.scatter(x, y, c="#5E62F4", alpha=1)
+    
         #Assigning the arguments to the plot    
         
         plt.title(title)
         plt.xlabel(xtitle)
         plt.ylabel(ytitle)
         plt.show()
-        
-        
-    def best_fit(self,x, y):
-        '''
-        Parameters
-        ----------
-        X : list
-        Y : a different list
-        DESCRIPION: takes 2 list variables that are passed in the arguments
-        and calculates the paramaters necessary to plot the line of best fit
-        Returns
-        -------
-        The mx and c values that would be in the 
-        y= mx+c equation (straight line equation)
-        '''
-    
-        xbar = sum(x)/len(x)
-        ybar = sum(y)/len(y)
-        n = len(x) # or len(y)
-    
-        numer = sum([xi*yi for xi,yi in zip(x, y)]) - n * xbar * ybar
-        denum = sum([xi**2 for xi in x]) - n * xbar**2
-    
-        b = numer / denum
-        a = ybar - b * xbar
-    
-        print('best fit line:\ny = {:.2f} + {:.2f}x'.format(a, b))
-        
-        self.a = a
-        self.b = b
         
     #Function to extract the RT from the OBJECTS and convert them into seconds
      
@@ -537,9 +495,11 @@ class Plotter(object):
         
         rt_converted = []
         
+        first_item = peak_obj_list[0]
+        
         #Check if it is a peak or peakset obj list
         
-        flag = isinstance(peak_obj_list[0], Peak)
+        flag = isinstance(first_item, Peak)
         
         #if it is an instance of peak then only the get_rt method has to be called
         

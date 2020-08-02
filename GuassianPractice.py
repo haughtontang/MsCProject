@@ -40,7 +40,7 @@ pps = ps.align(multi1, multi2,1.5)
 
 peaksets = ps.make_peaksets(pps)
 
-ms2_validated_peaksets = ps.ms2_comparison(peaksets)
+ms2_validated_peaksets = ps.ms2_comparison(peaksets, 0.9)
 
 multi1_rt, multi2_rt = plot.rt_extract_convert(ms2_validated_peaksets)
 
@@ -72,7 +72,7 @@ Y = rt_minus
 
 X = np.array(multi2_rt).reshape(len(multi2_rt),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
-kernel = GPy.kern.RBF(input_dim=1, variance= 10, lengthscale= 58.59)
+kernel = GPy.kern.RBF(input_dim=1, variance= 7.5, lengthscale= 58.59)
 m = GPy.models.GPRegression(X,Y, kernel = kernel) 
 m.plot()
 #variables for var and LS

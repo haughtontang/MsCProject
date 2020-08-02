@@ -18,10 +18,10 @@ The first run of the MS is finished so we have the first file, convert what was 
 into peak objects to be used in the future for alignment
 '''
 
-def first_run_peaks(filepath, mfg_path):
+def create_peak_objects(filepath, mgf_path):
     
     peaks = um.peak_creator(filepath)
-    um.assign_ms2(mfg_path, peaks)
+    um.assign_ms2(mgf_path, peaks)
     
     return peaks
 
@@ -36,8 +36,16 @@ im not entirely sure how you'd set a method up in that way. In any case, this is
 later
 '''
 
+'''
+If I'm always dealing with lists of peaks this function may not be necessary.
+If this is the case, the list of live runs peaks can just call the above function to
+arrange it into a list of peak objects
+'''
+
 def incoming_peaks(real_time_run):
     
+    #Should be dealing with list of peaks, will leave whats bellow commented out in case Needed later
+    '''
     list_of_live_runs = []
     
     #Not sure of an appropriate value for this, can revist later on. 
@@ -52,10 +60,10 @@ def incoming_peaks(real_time_run):
     The way that peak_creator is set up this wont work, maybe need to create a similar
     but realted method that does the exact same thing but without the file reader
     '''    
-    
+    '''
     #Create peaks from this list
     
-    list_of_peaks = um.peak_creator(list_of_live_runs)
+    list_of_peaks = um.peak_creator(real_time_run)
     
     #The file paths may also have to be arguments to this function
     
@@ -180,7 +188,7 @@ def correct_rt(GP_model, real_time_run, ps_list):
     ps list and looks to find align it to an existing peak. If the peak doesnt align, then its
     added to the list as a singlet peakset. This method returns the updated ps list
     '''
-    
+    '''
     #Add peak method
     
     new_ps_list = add_peak(ps_list, peak)
@@ -191,7 +199,7 @@ def correct_rt(GP_model, real_time_run, ps_list):
         
         model = create_model(new_ps_list, variance, lengthscale)
         
-        
+    '''    
     
     #After the alignment has been performed call the create_optimized_gp_model function
     
@@ -204,6 +212,37 @@ def correct_rt(GP_model, real_time_run, ps_list):
     If this number grows too large then another anchor is created. This would require me to write another function
     That acheieves this
     '''
+ 
+#Make a main method that can be easily called and performs everything
+
+def main(first_run_fp, first_run_mgf, live_run, live_run_mgf):
+
+    #Make peak objects
+
+    first_run = create_peak_objects(first_run_fp, first_run_mgf)
     
+    live_peaks = create_peak_objects(live_run, live_run_mgf)
+    
+    #Align the peaks
+    
+    peaksets = alignment(first_run, live_peaks)
+    
+    #Find the optimal optimization parameters
+    
+    var, ls = create_optimized_gp_model(peaksets)
+    
+    #Create the model
+    
+    model = create_model(peaksets, var, ls)
+    
+    #Correct RT
+    
+    correct_rt(model, live_peaks, peaksets)
+    
+    #Return a .csv file of correct times or something along those lines
+
+
+
+        
     
     

@@ -508,7 +508,7 @@ for i in resu:
     line = "var: ", str(best_var), "Lengthscale: ", str(best_ls), "RT tol: ", str(rt), "PS num: " ,str(ps_num), "MS2 PS: ", str(ms2_num), "Randomized MS2 Num: ", str(random_ms2_num), "Normal Scores < 0.9: ", str(low),"Random Scores < 0.9: ", str(rand_low),"Normal Scores = 0: ", str(zero),"Random Scores = 0: ", str(rand_zero)
     file.append(line)
     
-with open('range of rt tol with randomized MS2 by id round 1.txt', 'w') as f:
+with open('range of rt tol with randomized MS2 by id round 3.txt', 'w') as f:
     for item in file:
         line = str(item)
         f.write(line)

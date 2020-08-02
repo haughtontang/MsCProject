@@ -252,10 +252,7 @@ def align(peak_obj_list, another_peak_obj_list):
 
     return list_of_lists
 
-pps = ps.align(p1,p2, 1)
-print("pseudo peakset length = ", len(pps))
-ps = ps.make_peaksets(pps)
-print("peakset length = ",len(ps))
+
 
 '''
 EOW note 26/06: Good news is it works, bad news is doesnt work properly, getting way too many results
@@ -401,14 +398,24 @@ def rt_extract_convert(peak_obj_list):
         #Return 2 lists of rt in seconds        
         
         return rt1, rt2
-                       
-#rt1, rt2 = plot.rt_extract_convert(ps)
 
-#print(len(rt1),len(rt2))
+print("MS2 NUMBERS ONLY DOWN BELLOW NOW")
+print()
+print("RT = ", 100)
+pps = ps.align(p1,p2, 100)
+print("pseudo peakset length = ", len(pps))
+peakset = ps.make_peaksets(pps)
+print("peakset length = ",len(peakset))
+
+ms2 = ps.ms2_comparison(peakset, 0) 
+                      
+rt1, rt2 = plot.rt_extract_convert(peakset)
+
+print(len(rt1),len(rt2))
         
-#diff = plot.rt_minus_rt_plot(rt1, rt2)
+diff = plot.rt_minus_rt_plot(rt1, rt2)
 
-#plot(rt1,diff,"","","",False)
+plot(rt2,diff,"", "RT of Peaksets in File 2", "RT Difference Between Files")
 
 #02/07- dont need to worry about anchors for now
 
@@ -643,7 +650,6 @@ def ms2_matching(combined):
 #Result = 43. It actually works. Keep in mind that this for the full file- no intensity filter applied.
 
 #print(len(test))
-
 
 rt1, rt2 = plot.rt_extract_convert(ps)
 

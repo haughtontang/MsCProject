@@ -133,10 +133,6 @@ def GP_optimization(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2
         if score < 0.9:
             
             original_low_score_count +=1
-    
-    #original_score = np.mean(og_score)
-    
-    #original_score = round(original_score, 5)
 
     #Extract the RT of the anchors created above
 
@@ -418,7 +414,7 @@ def picking_best_results(results_list):
     
     #split the tuple for the best result of the newly organized list
     
-    var, ls, rt, top_result_num_ps, num_ms2, random_ms2,  score, avg_score, zero_score = list_of_the_best[0]
+    var, ls, rt, top_result_num_ps, num_ms2, random_ms2,  score, rand_score, zero_score, rand_zero = list_of_the_best[0]
     
     '''
     This list is then loop over again now that its been sorted in descending order of #ms2 matching ps
@@ -428,7 +424,7 @@ def picking_best_results(results_list):
     
     for i in list_of_the_best:
         
-        if i[4] < num_ms2 or i[7] < avg_score:
+        if i[4] < num_ms2 or i[7] < rand_score:
             
             list_of_the_best.remove(i)
     
@@ -444,7 +440,7 @@ def picking_best_results(results_list):
     
     for i in list_of_the_best:
         
-        var, ls, rt, top_result_num_ps, num_ms2, random_ms2, score, avg_score, zero_score = i
+        var, ls, rt, top_result_num_ps, num_ms2, random_ms2,  score, rand_score, zero_score, rand_zero = i
         
         best_var.append(var)
         best_ls.append(ls)
