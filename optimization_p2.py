@@ -36,7 +36,7 @@ def find_best_hypparams(peak1, peak2):
     
     #variance values
     
-    variance = [1,2.5,5,7.5,10]
+    variance = [1]
     
     initial_ls = 30.0
     
@@ -46,7 +46,7 @@ def find_best_hypparams(peak1, peak2):
     
     while initial_ls < 10000:
         
-        initial_ls = (initial_ls /1.2) * 1.5
+        initial_ls = (initial_ls /1.2) * 2
         
         ls.append(initial_ls)
         
@@ -133,7 +133,7 @@ def find_best_hypparams(peak1, peak2):
     
     best_var, best_ls = picking_best_results(results)
     
-    return best_var, best_ls
+    return results, best_var, best_ls
             
 def check_correction_quality(list_of_peaksets):
     
@@ -197,9 +197,9 @@ def check_correction_quality(list_of_peaksets):
     return scores
 
 def picking_best_results(results_list):
-    
+    print(len(results_list))
     top_result = results_list[0]
-    
+    #print(len(top_result))
     variance, lengthscale, ps, ms2, low, zero = top_result
     
     best_results = []
@@ -211,21 +211,25 @@ def picking_best_results(results_list):
             best_results.append(res)
             
     best_results.sort(key=lambda tup: tup[3])
-    
+    print(len(best_results))
     best = best_results[0]
     
     best_v, best_ls, best_ps, best_ms2, best_low, best_zero = best
             
     #remove results from the best list
-    
+    '''
     for i in best_results:
         
         if i[3] < best_ps or i[4] > best_low or i[5] > best_zero:
             
             best_results.remove(i)
-            
+     '''       
     best_var = []
     best_leng = []
+    
+    print("list of the best :")
+    print(best_results)
+    print()
     
     for top in best_results:
         
@@ -234,17 +238,15 @@ def picking_best_results(results_list):
         best_var.append(v)
         best_leng.append(ls)
         
-    best_var = sorted(best_var, key=float)
-    best_leng = sorted(best_leng, key=float)
+    best_var.sort(key=float)
+    best_leng.sort(key=float)
    
-    print("list of the best :")
-    print(list_of_the_best)
-    print()
+    
     print("variance list:")
     print(best_var)
     print()
     print("LS list:")
-    print(best_ls)
+    print(best_leng)
    
     return best_var[0], best_leng[0]
             
@@ -274,13 +276,28 @@ rt_minus = plot.rt_minus_rt_plot(rt1, rt2)
 X = np.array(rt2).reshape(len(rt2),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
+all_time = []
+
+for i in p2:
+    
+    all_time.append(i.rt)
+    
+all_time = np.array(all_time).reshape(len(all_time),1)
+
 resu, variance_val, ls_val = find_best_hypparams(p1, p2)
 
 gp_kern = GPy.kern.RBF(input_dim=1, variance= variance_val, lengthscale= ls_val)
 gp_model = GPy.models.GPRegression(X,Y, kernel = gp_kern)    
 
 mean, var = gp_model.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
-            
+p1 = um.peak_creator('multi 1 ms2.csv')
+p2 = um.peak_creator('multi 2 ms2.csv')
+  
+um.assign_ms2("multi1_ms2.MGF", p1) 
+um.assign_ms2("multi2_ms2.MGF", p2) 
+
+p1.sort(key = lambda x: x.intensity)
+p2.sort(key = lambda x: x.intensity)            
 #convert from np array to list
 
 mean = list(mean.flatten())
@@ -288,8 +305,6 @@ mean = list(mean.flatten())
 #This method corrects the RT of the file_to_correct by adding the predictions (mean) produced by the model
 
 um.correct_rt(p2, mean)
-
-#for time in RT_tolerances:
 
 #Align PS again under normal circumstances
 
@@ -308,9 +323,9 @@ file = []
 
 for i in resu:
     
-    best_var, best_ls, rt, ps_num, ms2_num, low, zero = i
+    best_var, best_ls, ps_num, ms2_num, low, zero = i
 
-    line = "var: ", str(best_var), "Lengthscale: ", str(best_ls), "RT tol: ", str(rt), "PS num: " ,str(ps_num), "MS2 PS: ", str(ms2_num), "Normal Scores < 0.9: ", str(low),"Normal Scores = 0: ", str(zero)
+    line = "var: ", str(best_var), "Lengthscale: ", str(best_ls), "PS num: " ,str(ps_num), "MS2 PS: ", str(ms2_num), "Normal Scores < 0.9: ", str(low),"Normal Scores = 0: ", str(zero)
     file.append(line)
     
 with open('this time lucky.txt', 'w') as f:
