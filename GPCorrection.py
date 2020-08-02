@@ -333,3 +333,62 @@ def picking_best_results(results_list):
     best_ls.sort(key=float, reverse=True)
     
     return best_var[0], best_ls[0]
+
+#Import and make peaks
+
+multi1 = um.peak_creator('multi 1 ms2.csv')
+multi2 = um.peak_creator('multi 2 ms2.csv')
+
+um.assign_ms2("multi1_ms2.MGF", multi1)
+um.assign_ms2("multi2_ms2.MGF", multi2)
+
+#Sort by intensity
+
+multi1.sort(key = lambda x: x.intensity)
+multi2.sort(key = lambda x: x.intensity)
+
+#Get the most sig peaks
+
+var, ls = GP_optimization(multi1, multi2)
+
+#multi1 = um.most_sig_peaks(multi1, 5e6)
+#multi2 = um.most_sig_peaks(multi2, 5e6)
+
+pps = ps.align(multi1, multi2,1.5)
+
+peaksets = ps.make_peaksets(pps)
+
+print("Before correction: ", len(peaksets))
+
+
+#This is needed to make it an array/2d list so it can be used in the guassian
+
+#Imports
+#Create peakset objects and match them
+var, ls = GP_optimization(multi1, multi2)
+X = np.array(multi2_rt).reshape(len(multi2_rt),1)
+Y = np.array(rt_minus).reshape(len(rt_minus),1)
+kernel = GPy.kern.RBF(input_dim=1, variance= var, lengthscale= ls)
+m = GPy.models.GPRegression(X,Y, kernel = kernel) 
+
+all_time = np.array(all_time).reshape(len(all_time),1)
+
+mean, var = m.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
+
+#convert from np array to list
+
+mean = list(mean.flatten())
+#Alter the RT of the peaks
+
+um.correct_rt(multi2, mean)
+
+#match PS again
+
+pseuo = ps.align(multi1, multi2, 1.5)
+peak_sets = ps.make_peaksets(pseuo)
+
+ms2_matches = ps.ms2_comparison(peak_sets, 0)
+
+print("After correction", len(peak_sets))
+
+print("MS2 after correction", len(ms2_matches))
