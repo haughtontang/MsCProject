@@ -14,8 +14,8 @@ import SimilarityCalc as sc
 import GPCorrection as gpc
 
 '''
-The first run of the MS is finished so we have the first file, convert what was generated in this file
-into peak objects to be used in the future for alignment
+Take 2 paths of picked peaks as its argument and convert the information in these files into
+peak objects
 '''
 
 def create_peak_objects(filepath, mgf_path):
@@ -41,11 +41,11 @@ If I'm always dealing with lists of peaks this function may not be necessary.
 If this is the case, the list of live runs peaks can just call the above function to
 arrange it into a list of peak objects
 '''
-
+'''
 def incoming_peaks(real_time_run):
     
     #Should be dealing with list of peaks, will leave whats bellow commented out in case Needed later
-    '''
+    
     list_of_live_runs = []
     
     #Not sure of an appropriate value for this, can revist later on. 
@@ -56,13 +56,14 @@ def incoming_peaks(real_time_run):
         
         list_of_live_runs.append(real_time_run)
         
+'''
     '''
     The way that peak_creator is set up this wont work, maybe need to create a similar
     but realted method that does the exact same thing but without the file reader
-    '''    
+
     '''
     #Create peaks from this list
-    
+    '''
     list_of_peaks = um.peak_creator(real_time_run)
     
     #The file paths may also have to be arguments to this function
@@ -79,12 +80,12 @@ def incoming_peaks(real_time_run):
     ps = alignment(first_file, list_of_peaks)
     
     return ps
-  
+  '''
 #Seperate alignment method to clean up the incoming_peaks function and later functions
   
-def alignment(first_run_peaks, incoming_peaks):
+def alignment(first_run_peaks, incoming_peaks, RT_tol):
     
-    pseudo_peaksets = ps.align(first_run_peaks, incoming_peaks, 1.5)
+    pseudo_peaksets = ps.align(first_run_peaks, incoming_peaks, RT_tol)
     
     peaksets = ps.make_peaksets(pseudo_peaksets)
     
@@ -92,7 +93,7 @@ def alignment(first_run_peaks, incoming_peaks):
 
 def create_model(peakset_list, variance, lengthscale):
     
-    anchors = ps.ms2_comparion(peakset_list)
+    anchors = ps.ms2_comparion(peakset_list, 0.9)
     
     first_run_rt, incoming_rt = plot.rt_extract_convert(anchors)
 
@@ -102,7 +103,7 @@ def create_model(peakset_list, variance, lengthscale):
         
     #Need to make it the list into an array so it can be used in the GP
     
-    X = np.array(multi2_rt).reshape(len(incoming_rt),1)
+    X = np.array(incoming_rt).reshape(len(incoming_rt),1)
     Y = np.array(rt_minus).reshape(len(rt_minus),1)
     
     kernel = GPy.kern.RBF(input_dim=1, variance= variance, lengthscale= lengthscale)
@@ -110,7 +111,7 @@ def create_model(peakset_list, variance, lengthscale):
     
     return model
 
-def create_optimized_gp_model(list_of_peaks_firstrun, list_of_peaks_liverun):
+def create_optimized_gp_model(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2):
     
     '''
     I can recycle the code I've written in GPCorrection.py
@@ -129,7 +130,7 @@ def create_optimized_gp_model(list_of_peaks_firstrun, list_of_peaks_liverun):
     Because of that i dont need it to return the model, ill need it to return the var and ls figures
     '''
     
-    return gpc.GP_optimization(list_of_peaks_firstrun, list_of_peaks_liverun)
+    return gpc.GP_optimization(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2)
 
 def add_peak(peakset_list, peak):
      '''
@@ -151,7 +152,7 @@ def add_peak(peakset_list, peak):
      
      for peakset in peakset_list:
          
-         if len(peakset.peaks) <2:
+         if peakset.number_of_peaks <2:
              
              potential_match = peakset.peaks
              
@@ -161,13 +162,27 @@ def add_peak(peakset_list, peak):
 
 #This could be set up as a recursive method?
     
-def correct_rt(GP_model, real_time_run, ps_list):
+def correct_rt(GP_model, ps_list):
     
-    peak = um.peak_creator(real_time_run)
+    #Extract live run peaks from peakset
     
-    #Take the RT and convert it to a vairable
+    live_peaks = []
     
-    rt = peak.get_rt()
+    for i in ps_list:
+        
+        for j in i.peaks:
+            
+            if j.get_file() == "Live run file name":
+                
+                live_peaks.append(j)
+                
+    #Extract the rt from those peaks
+    
+    rt = []
+    
+    for peak in live_peaks:
+        
+        rt.append(peak.get_rt())
     
     #Convert this variable into a numpy array before passing to the model
     
@@ -175,13 +190,13 @@ def correct_rt(GP_model, real_time_run, ps_list):
     
     #Get mean and variance for the current rt based on the model
     
-    mean, var =  mean, var = GP_model.predict(rt, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
+    mean, var = GP_model.predict(rt, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
     
     mean = list(mean.flatten())
             
     #This method corrects the RT by adding the predictions (mean) produced by the model
     
-    um.correct_rt(peak, mean)
+    um.correct_rt(live_peaks, mean)
     
     '''
     Create a method that takes a single peak as an argument and loops over an existing
@@ -213,9 +228,9 @@ def correct_rt(GP_model, real_time_run, ps_list):
     That acheieves this
     '''
  
-#Make a main method that can be easily called and performs everything
+#Make a main method that can be easily called and performs everything, takes file paths are arguments
 
-def main(first_run_fp, first_run_mgf, live_run, live_run_mgf):
+def main(first_run_fp, first_run_mgf, live_run, live_run_mgf, RT_tol):
 
     #Make peak objects
 
@@ -225,7 +240,7 @@ def main(first_run_fp, first_run_mgf, live_run, live_run_mgf):
     
     #Align the peaks
     
-    peaksets = alignment(first_run, live_peaks)
+    peaksets = alignment(first_run, live_peaks, RT_tol)
     
     #Find the optimal optimization parameters
     
@@ -237,11 +252,27 @@ def main(first_run_fp, first_run_mgf, live_run, live_run_mgf):
     
     #Correct RT
     
-    correct_rt(model, live_peaks, peaksets)
+    correct_rt(model, peaksets)
+    
+    #Realign 
+    
+    corrected_alignment = alignment(first_run, live_peaks, RT_tol)
+    
+    #Check if there is a new paired peakset
+    
+    if len(peaksets) != len(corrected_alignment):
+        
+        #Search for new anchors and update the model
+        
+        model = create_model(corrected_alignment, var, ls)
     
     #Return a .csv file of correct times or something along those lines
 
-
+'''
+Not sure how this method could be called continuously during a live lc-ms experiment
+without using a loop or recursion or something similar. Need to ask for some advice
+But overall I think this should would. 
+'''
 
         
     
