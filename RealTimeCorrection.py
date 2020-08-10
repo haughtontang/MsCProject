@@ -11,7 +11,7 @@ import UsefulMethods as um
 from PeakTools import Plotter as plot
 import numpy as np
 import SimilarityCalc as sc
-import GPCorrection as gpc
+import Optimization as gpc
 import Investigative_Functions as invfun
 
 '''
@@ -132,7 +132,7 @@ def create_optimized_gp_model(filepath_to_match, filepath_to_correct, mgf_path1,
     Because of that i dont need it to return the model, ill need it to return the var and ls figures
     '''
     
-    return gpc.GP_optimization(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2)
+    return gpc.find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2)
 
 def add_peak(peakset_list, peak):
      '''
@@ -269,6 +269,8 @@ def main(first_run_fp, first_run_mgf, live_run, live_run_mgf, RT_tol):
     #Search for potential new anchors and update the model
         
     model = create_model(corrected_alignment, var, ls)
+    
+    #Rerun the entire process again with the new model
     
     #Return a .csv file of correct times or something along those lines
 
