@@ -72,7 +72,7 @@ Y = rt_minus
 
 X = np.array(multi2_rt).reshape(len(multi2_rt),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
-kernel = GPy.kern.RBF(input_dim=1, variance= 7.5, lengthscale= 58.59)
+kernel = GPy.kern.RBF(input_dim=1, variance= 5, lengthscale= 91.56)
 m = GPy.models.GPRegression(X,Y, kernel = kernel) 
 m.plot()
 #variables for var and LS

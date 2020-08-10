@@ -210,42 +210,4 @@ print(tup)
 corrected_id_list1 = []
 corrected_id_list2 = []
 
-for i in corrected_ms2:
 
-    for j in i.peaks:
-        
-        if j.file == "multi 1 ms2.csv":
-            yup = j.ms2
-            
-            key = yup.feature_id
-            
-            corrected_id_list1.append(key)
-            
-        else:
-            
-            yup = j.ms2
-            
-            key = yup.feature_id
-            
-            corrected_id_list2.append(key)
-
-count = 0
-        
-for s in id_list1:
-    
-    if s not in corrected_id_list1:
-        
-        #print(s)
-        count+=1
- 
-print("numbers removed from ms2 in file1", count)
-
-count = 0
-for s in id_list2:
-    
-    if s not in corrected_id_list2:
-        
-        #print(s)
-        count+=1
-        
-print("numbers removed from ms2 in file2", count)

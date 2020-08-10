@@ -12,6 +12,7 @@ from PeakTools import Plotter as plot
 import numpy as np
 import SimilarityCalc as sc
 import GPCorrection as gpc
+import Investigative_Functions as invfun
 
 '''
 Take 2 paths of picked peaks as its argument and convert the information in these files into
@@ -25,6 +26,7 @@ def create_peak_objects(filepath, mgf_path):
     
     return peaks
 
+#dealing with list of peaks so ignore
 '''
 This function is dealing with the second run (file) of peaks in real time, in my head
 the function accepts one peak at a time, this is stored in a list then when the size of that
@@ -258,13 +260,15 @@ def main(first_run_fp, first_run_mgf, live_run, live_run_mgf, RT_tol):
     
     corrected_alignment = alignment(first_run, live_peaks, RT_tol)
     
-    #Check if there is a new paired peakset
+    #Investigate differences in MS2
     
-    if len(peaksets) != len(corrected_alignment):
+    corrected_alignment = invfun.get_reomoved_ms2_peaks(peaksets, corrected_alignment)
+    
+    #Check if there is a new paired peakset
+            
+    #Search for potential new anchors and update the model
         
-        #Search for new anchors and update the model
-        
-        model = create_model(corrected_alignment, var, ls)
+    model = create_model(corrected_alignment, var, ls)
     
     #Return a .csv file of correct times or something along those lines
 
