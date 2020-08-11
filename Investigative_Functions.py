@@ -8,6 +8,7 @@ Created on Wed Aug  5 13:15:29 2020
 from PeakTools import PeakSet as ps
 from PeakTools import Plotter as plot
 import matplotlib.pyplot as plt
+import SimilarityCalc as sc
 
 
 def get_matched(peakset):
@@ -310,24 +311,23 @@ def get_mz_plot(peaksets):
 
 def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
     
-    '''
-    Parameters
-    ----------
-    peaksets : list of peakset objects pre correction
-    corrected_peakset : list of peakset objects post correction
-    DESCRIPTION: By using the ID lists of the peakset provided in the argument
-    The MS2 peaks that were removed during correction are found through use of these IDs. 
-    From there the MS2 peaks that were removed have their m/z difference reexamined to determine
-    if their removal was a mistake. If the difference is within a certain threshold, they are readded
-    to the corrected peakset list as a matching peakset.
-    Returns
-    -------
-    final_corrected_peaksets : list of peakset objects with the potential
-    to contain added extra MS2 peaksets
-    '''
+   '''
+   Parameters
+   ----------
+   peaksets : list of peakset objects pre correction
+   corrected_peakset : list of peakset objects post correction
+   DESCRIPTION: By using the ID lists of the peakset provided in the argument
+   The MS2 peaks that were removed during correction are found through use of these IDs. 
+   From there the MS2 peaks that were removed have their m/z difference reexamined to determine
+   if their removal was a mistake. If the difference is within a certain threshold, they are readded
+   to the corrected peakset list as a matching peakset.
+   Returns
+   -------
+   final_corrected_peaksets : list of peakset objects with the potential
+   to contain added extra MS2 peaksets
+   '''
     
    #Convert PS to ms2 ps
-   
    ms2 = ps.ms2_comparison(peaksets, 0)
    corrected_ms2 = ps.ms2_comparison(corrected_peakset, 0)
     
@@ -429,6 +429,38 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
    #convert to peaksets objects
    
    recovered_ps = ps.make_peaksets(recovered_ps)
+   
+   #now check the similairty score as a final QC
+   
+   for i in recovered_ps:
+       
+       #Unpack the peaks in the peakset object
+      
+        p1 = i.peaks[0]
+        p2 = i.peaks[1]
+        
+        #access the ms2 spectra as part of these peaks
+        
+        spec1 = p1.ms2
+        spec2 = p2.ms2
+        
+        #Append the spectra to a list
+        
+        spec_list = []
+        spec_list.append(spec1)
+        spec_list.append(spec2)
+        
+        #Get the spectra similarity score
+        
+        score = sc.similarity_score(spec_list)
+        
+        #Apply a stricter similarty threshold for these ms2 peaks
+        
+        if score < 0.97:
+            
+            #Ifit is bellow this threshold- remove it
+            
+            recovered_ps.remove(i)
    
    #To avoid dealing with file name, do it by indivudal peak
    

@@ -7,6 +7,14 @@ Created on Mon Jun 22 14:24:53 2020
 
 import statistics
 
+'''
+Class bellow is a representation of a peak
+The function in the useful_functions.py files is used
+to create objects of this class. Throughout the program
+the vast majoirt of functions are built to accept list of peak
+objects or peakset objects
+'''
+
 class Peak(object):
     
     def __init__(self, key, mz, rt, intensity, file, ms2):
@@ -20,7 +28,7 @@ class Peak(object):
         intensity: float
         file: string
         ms2: spectrum object
-        DESCRIPTION: This constructor will create peak objects- which are defined by the 3 
+        DESCRIPTION: This constructor will create peak objects- which are defined by the 6 
         arguments passed to the constrcutor
         -------
         '''
@@ -45,6 +53,8 @@ class Peak(object):
         
         return self.rt
     
+    #This is the only setter required, use during the RT correction stage and ONLY used there
+    
     def set_rt(self, rt):
         
         self.rt = rt
@@ -61,9 +71,12 @@ class Peak(object):
         
         return self.ms2  
 
-
-import UsefulMethods as um
 import SimilarityCalc as sc        
+
+'''
+Peaksets are generated during the alignment of peaks
+during the alignmnet the peak objects are converted to peaksets
+'''
 
 class PeakSet(object):
     
@@ -86,7 +99,7 @@ class PeakSet(object):
       
     '''    
     A peakset needs to have an mz, rt..ect value same as a peak
-    These are calculated by taking the average ofsaid values that make up the
+    These are calculated by taking the average of said values that make up the
     peakset
     '''    
     def avg_mz(peak_list):
@@ -149,6 +162,12 @@ class PeakSet(object):
         
         return average_intensity
     
+    #getter for peaks as they are often accessed
+    
+    def get_peaks(self):
+        
+        return self.peaks
+    
     #Align the peaks into lists of peaks that have similar mz and rt
     
     def align(peak_obj_list, another_peak_obj_list, rt_tol):
@@ -159,6 +178,7 @@ class PeakSet(object):
         NOTE: Both lists should be sorted by intensity in reverse order
         peak_obj_list : List of peak objects from a file
         another_peak_obj_list : List of peak objects from another file
+        rt_tol: float- RT tolerance between peaks in seconds
         Description: This method will form pseudo peaksets by matching the peaks
         between the 2 files into a list and appending said list to another list
         This list of lists can then be used to create peakset objects
@@ -172,13 +192,14 @@ class PeakSet(object):
         list_of_lists = []
         
         '''
-        These 2 buffer variables constitiue the avg differences between mz and
-        rt respectively, these were caluclated by taking the mean of the top 10
-        most intense peaks in the file
+        m/z differences between peaks that originate from the same metabolite will have a
+        tight difference between the 2. This means that the buffer for m/z must be tight
+        or else the risk of false positives is evelvated. RT is set by the user as this
+        tolerance can be more variable
         '''
     
         mz_buffer = 0.00015
-        rt_buffer = rt_tol #0.025
+        rt_buffer = rt_tol
         
         '''
         #The largest list needs to be the first in the loop or else it'll produce an error when
@@ -348,7 +369,9 @@ class PeakSet(object):
         ----------
         list_of_pseudo_peaksets : output from the align method
         DESCRIPTION: loops through the list of lists provided and creates
-        peakset objects from this
+        peakset objects from this. Each index in the list of lists is a list itself
+        containing peaks- in the case of the test data there will either be one or two peaks
+        This function will take each index and convert it to a peakset object
         Returns
         -------
         List of peakset objects
@@ -380,12 +403,13 @@ class PeakSet(object):
         similarity_tol: Float that cant be greater than 1.0
         DESCRIPTION: Loops over the list of peaks in peaksets- find peaksets that
         match and that have ms2 spectra. Once they are found a method is called to check
-        the similarity score between the 2. If it is above a certain score threshold it
+        the similarity score between the 2. If it is above the similarity_tol it
         is appended to a list. This list will represent peaksets that have been aligned based on their
         m/z, rt and ms2
         Returns
         -------
-        ms2_comp : A List of aligned peaksets
+        ms2_comp : A seperate list containing only matching peaksets that both have
+        an ms2 spectrum object with a similairty score above a certain threshold
         '''
         
         #Empty list of comparisons to be returned
@@ -398,7 +422,7 @@ class PeakSet(object):
             
             #We're only looking to compare matched peaksets so look for peaksets having >1 peaks making up the peakset
             
-            if len(ps.peaks) > 1:
+            if ps.number_of_peaks > 1:
                 
                 #Empty list to store the spectrum objects that are an attribute of Peak objects
                 
@@ -406,11 +430,11 @@ class PeakSet(object):
                 
                 #Loop over the peak list in peakset
             
-                for peak in ps.peaks:
+                for peak in ps.get_peaks():
                     
                     #Not all peak objects have an ms2 attrbute so this checks for those that do
                     
-                    if peak.ms2 != None:
+                    if peak.get_ms2() != None:
                         
                         #If one is found add it to the ms2 list
                         
@@ -438,214 +462,3 @@ class PeakSet(object):
                         ms2_comp.append(ps)
                         
         return ms2_comp
-              
-import matplotlib.pyplot as plt
-
-class Plotter(object):
-    
-    def __init__(self, x, y, title, xtitle, ytitle):
-        
-        '''
-        Parameters
-        ----------
-        x : list of values to be plotted
-        y : list of values to be plotted
-        title: title for the plot
-        xtitle: x-axis title
-        ytitle: y-axis title
-        DESCRIPTION: uses the 2 variables to produce a scatter plot
-        Returns
-        -------
-        Scatter plot
-        '''
-        #Variables for plot
-
-        #colors = [[0,0,0]]
-    
-        # Plot
-        
-        plt.scatter(x, y, c="#5E62F4", alpha=1)
-    
-        #Assigning the arguments to the plot    
-        
-        plt.title(title)
-        plt.xlabel(xtitle)
-        plt.ylabel(ytitle)
-        plt.show()
-        
-    #Function to extract the RT from the OBJECTS and convert them into seconds
-     
-    def rt_extract_convert(peak_obj_list):
-    
-        '''
-        Parameters
-        ----------
-        peak_obj_list : peak or peakset object
-        DESCRIPTION: This will loop over the list attribute in the object,
-        extracting the RT values into a sepearate list
-        These will be converted to seconds (as mzMINE represent RT in minutes) 
-        prior to being placed into the new list.
-        Returns
-        -------
-        List of RT in seconds
-        NOTE: if peakset obj list is provided the number of lists returned
-        Will be the number of files that make up the peaksets
-        '''
-        #Convert these values into seconds since they're currently in minutes
-        
-        rt_converted = []
-        
-        first_item = peak_obj_list[0]
-        
-        #Check if it is a peak or peakset obj list
-        
-        flag = isinstance(first_item, Peak)
-        
-        #if it is an instance of peak then only the get_rt method has to be called
-        
-        if flag:
-        
-            for i in peak_obj_list:
-                
-                #converting from minutes to seconds so multiply by 60
-                
-                rt_convert = i.get_rt()
-                
-                #Add this converted time to a list
-            
-                rt_converted.append(rt_convert)
-            
-            #return the list of conversions    
-            
-            return rt_converted
-        
-        #If it isnt a peak then it must be a peakset, needs slight alteration when grabbing rt
-        
-        else:
-            
-            #Find out the original file, to do that; loop over all the peaksets and find all the unique file names
-            
-            names =[]
-            
-            for peakset in peak_obj_list:
-                
-                #loop over lists in peakset
-                
-                for peak in peakset.peaks:
-                    
-                    name = peak.get_file()
-                    
-                names.append(name)
-                
-            #make the names list only contain unique names
-            
-            names = list(set(names))
-            
-            '''
-            in the case of the multi beers we're working with 2 files so make 2 rt lists to append to
-            these will be returned at the end once they've been populated'
-            '''
-            
-            rt1 = []
-            rt2 = []
-            
-            '''
-            Since peaksets are dealing with lists of lists it can get complicated quite quikcly
-            Instead, this for loop bellow will extract all the peak objects in peakset and
-            store them as a 1D list as thats easier to manipulate
-            '''
-            
-            #Variable to store peaksets that dont contain only a single peak
-            
-            matched = []
-            
-            #List variable for the eventual 1d list of peaks in peakset
-            
-            peaks = []
-    
-            #if the peakset obj has more than one peak, append it to the matched list
-            
-            for ps in peak_obj_list:
-                
-                if ps.number_of_peaks != 1:
-                    
-                    matched.append(ps)
-                    
-            #for all the peaks in the matched list, loop over those and extract individual peaks
-        
-            for peakset in matched:
-                
-                #loop over peak list attributes that are part of those objects
-                
-                for peak in peakset.peaks:
-                    
-                    #Get the peaks in that list attribute and append it to this list
-                    
-                    peaks.append(peak)
-                
-            #now that we have a 1d list of peaks in peakset, convert them into seconds
-            
-            for peak in peaks:
-                
-                #Check the original file it came from and append it to a different list to maintain data integrity
-                
-                if peak.get_file() == names[0]:
-                    
-                    rt = peak.get_rt() 
-                    
-                    rt1.append(rt)
-                
-                #Same as ove but for if it came from a different file    
-                
-                else:
-                    
-                    rt = peak.get_rt() 
-                    
-                    rt2.append(rt)
-            
-            #Return 2 lists of rt in seconds        
-            
-            return rt1, rt2
-    
-    '''
-    Needed for plotting the guassian     
-    This method takes the rt in one file and subtracts it from the rt in another
-    '''
-    
-    def rt_minus_rt_plot(rt_list_1, rt_list_2):
-        '''
-        Parameters
-        ----------
-        rt_list_1 : list of retention times from a picked peak file
-        rt_list_2 : list of retention times from a different picked peak file
-        DESCRIPTION: Takes the values from the first list provided and subtracts
-        them from the values in the second list provided (they're subtracted at the same index)
-        Returns
-        -------
-        a list of floats containing the rt differences between the 2 files
-
-        '''
-        
-        #Variable to store the differences
-        
-        difference = []
-        
-        '''
-        By zipping the lists together it means you only require 1 for loop to go through
-        and subtract the values
-        '''
-        
-        zip_obj = zip(rt_list_1, rt_list_2)
-        
-        for i, j in zip_obj:
-            
-            #i and j represent the first rt values in rt_list_1 and 2 respectively
-            
-            #simply append the subtraction value to the empty list created earlier
-            
-
-            difference.append(i - j)
-        
-        #Return the list of differences    
-        
-        return difference
