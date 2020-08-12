@@ -1,26 +1,47 @@
 import GPy
-from PeakTools import PeakSet as ps
-import UsefulMethods as um
-from PeakTools import Plotter as plot
+from peak_tools import PeakSet as ps
+import useful_functions as um
 import numpy as np
-import SimilarityCalc as sc
+import similarity_calc as sc
 import random
 
 def random_ms2(peak_list):
-              
-    #This method is just for testing the optimization thing bellow
+    '''
+    Parameters
+    ----------
+    peak_list : List: a list of peak objects BEFORE asigning their MS2 spectra
+    DESCRIPTION: Loop loop through the given list an assign that peak a random id
+    number between 1 and the length of the list. This ensure that MS2 spectra are
+    randomly assigned as they are aligned by matching spectrum IDs to peak ids
+    Returns
+    -------
+    None.
+
+    '''
+    #This method is just for testing the optimization function bellow
     
     #It will randomly assign MS2 spectrum objects to aligned peaksets in attempt to generate false +ves
     
     random_list = []
     
+    #Get the mximum number for the random generator
+    
     limit = len(peak_list)
-
+    
+    #Make a list of random numbers
+    
     for i in range(0, limit):
         
         n = random.randint(0,limit)
         
         random_list.append(n)
+    
+    '''
+    Loop through the list of peaks given in the argument and using another 
+    random num genrator, access a random index in the list of random numbers
+    and use its value to replace the existing peak ID. At the end, every peak in the list 
+    will have a new ID, generated randomly.
+    '''
     
     for peak in peak_list:
         
@@ -29,13 +50,15 @@ def random_ms2(peak_list):
         new_id = random_list[index]
         
         peak.id = new_id
+
+#Another randomization method
         
 def randomize_ms2(mgf_path, mgf_path_otherfile, peakset_list):
     '''
     Parameters
     ----------
-    mgf_path : File path to an mgf file corresponding to a picked peak file
-    mgf_path_otherfile : mgf file path corresponding to a seperate picked peak file
+    mgf_path : String: File path to an mgf file corresponding to a picked peak file
+    mgf_path_otherfile : String: mgf file path corresponding to a seperate picked peak file
     peakset_list : List of peakset objects
     
     DESCRIPTION: The function will extract peaksets that have greater than 1
@@ -53,32 +76,68 @@ def randomize_ms2(mgf_path, mgf_path_otherfile, peakset_list):
     ms2 spectra.
     '''
 
+    #Create 2 lists of spectra objects using the file paths    
+
     spectra1 = sc.mgf_reader(mgf_path)
     spectra2 = sc.mgf_reader(mgf_path_otherfile)
     
-    index1 = random.randint(0,len(spectra1))
-    index2 = random.randint(0,len(spectra2))
+    #Loop over the list of peaksests
     
     for i in peakset_list:
         
-        if len(i.peaks) > 1:
+        #Only access those that are matched
         
-            for j in i.peaks:
+        if i.number_of_peaks > 1:
+        
+            #loop over the list of peaks as part of PS    
+        
+            for j in i.get_peaks():
+                
+                #Generate a random index to be used
                 
                 index1 = random.randint(0,len(spectra1)-1)
                 index2 = random.randint(0,len(spectra2)-1)
                 
+                #Ensures that the correct spectra is applied to its pairing file
+                
                 if j.get_file() =='multi 1 ms2.csv':
         
-                    j.ms2 = spectra1[index1]
-                    
+                    j.set_ms2(spectra1[index1])
+                
+                #If it doesnt match this condition then it must be from the other file
+                #Use the other list for the random re assignment
+                
                 else:
                     
-                    j.ms2 = spectra2[index2]
+                     j.set_ms2(spectra2[index2])
                     
     return peakset_list
 
+#Methods bellow mirror those used in optimization.py with slight changes made for testing purposes
+
 def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2):
+    '''
+    Parameters
+    ----------
+    filepath_to_match : File path to picked peak file
+    filepath_to_correct : File path to another picked peak file
+    mgf_path1 : file path to the corresponding mfg file of the first picked peak file
+    mgf_path2 : file path to the corresponding mfg file of the second picked peak file
+    
+    DESCRIPTION: assesses various variance and length scale values and return the optimum
+    kernel parameters based on the number of peaksets generated post correction, and the
+    quality of their ms2 similairty scores
+    
+    An alteration on the original file for the purposes of testing. There is 
+    an increased LS range to assess some extreme params. The results list is also returned
+    at the end of this method
+    
+    Returns
+    -------
+    results: list of tuples
+    best_var : Float: best variance value
+    best_ls : Float: best ls value
+    '''
     
     #variance values
     
@@ -92,7 +151,11 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
     
     ls.append(initial_ls)
     
+    #More extreme range used to assess how this affects correction
+    
     while initial_ls < 1000:
+        
+        #Incrmeentation used to get a good range of values
         
         initial_ls = (initial_ls /1.2) * 1.5
         
@@ -103,15 +166,20 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
     #Appended recorded results
         
     results = []
-    rt_tol = [1.5]
+
+    #Nested loop bellow will test every variance value against eveery ls value to find the best results
+
     for v in variance:
         
         for leng in ls:
             
-            #print("var", v)
-            #print("lengthscale", leng)
-            #Extract rt to make rt minus numbers
-    
+            '''
+            As this test is to identift false positives, we want to get the peakset numbers under
+            normal conditions and record these as well as those corrected
+            
+            later these steps will be repeated but with the random tests
+            '''
+
             #Creating the Peak objects and assigning their MS2 spectra
 
             peak1 = um.peak_creator(filepath_to_match)
@@ -120,34 +188,29 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
             um.assign_ms2(mgf_path1, peak1)
             um.assign_ms2(mgf_path2, peak2)
             
-            #Sort by intensity
-            
-            peak1.sort(key = lambda x: x.intensity)
-            peak2.sort(key = lambda x: x.intensity)
-            
             #Align and make peaksets
-            
-
-            
+        
             align = ps.align(peak1, peak2,1.5)
+            
+            #Make peaksets
             
             peaksets = ps.make_peaksets(align)
             
+            #Make anchors
+            
             anchors = ps.ms2_comparison(peaksets, 0.9)
     
-            rt1, rt2 = plot.rt_extract_convert(anchors)
+            #Get the rt list of the anchors
+    
+            rt1, rt2 = um.rt_extraction(anchors)
             
-            rt_minus = plot.rt_minus_rt_plot(rt1, rt2)
+            #Subtract the 2 attributes
+            
+            rt_minus = um.subtract_attributes(rt1, rt2)
             
             #get the time in peak2
             
-            all_time = []
-            
-            for peak in peak2:
-                
-                t = peak.get_rt()
-                
-                all_time.append(t)
+            all_time = um.rt_extraction(peak2)
             
             #Convert to numpy arrays    
             
@@ -158,6 +221,8 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
             #Make a kernel using these params
             
             #Set up kernel and model objects using Gpy
+            
+            #Variance and lengthscale values from the for loops are used
             
             kernel = GPy.kern.RBF(input_dim=1, variance= v, lengthscale= leng)
             m = GPy.models.GPRegression(X,Y, kernel = kernel)    
@@ -180,7 +245,7 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
             
             corrected_peaksets = ps.make_peaksets(corrected_align)
             
-            #get the number
+            #get the number of corrected peaksets
             
             num_corrected = len(corrected_peaksets)
             
@@ -191,7 +256,9 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
             #get ms2 num
             
             ms2_num = len(corrected_ms2)
-                        
+            
+            #Used as counters for the number of low and zero scores generated after correction
+            
             low_score_count = 0
             
             zero_score_count = 0
@@ -199,6 +266,8 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
             #Get correction scores for all MS2 spectra aligned and find if there are any of low quality
             
             corrected_scores = check_correction_quality(corrected_ms2)
+            
+            #Loops over the scores generated by the method above and checks the scores
             
             for score in corrected_scores:
                 
@@ -210,48 +279,54 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
                     
                     zero_score_count+=1
 
-            #reset for random
+            #reset everything for the randomization test 
             
             peak1 = um.peak_creator(filepath_to_match)
             peak2 = um.peak_creator(filepath_to_correct)
             
-            #rnadom for the id method
+            #Uncomment bellow if using the random ID method
             
-            random_ms2(peak1)
-            random_ms2(peak2)
+            #random_ms2(peak1)
+            #random_ms2(peak2)
+            
+            #Assign ms2 spectra
             
             um.assign_ms2(mgf_path1, peak1)
             um.assign_ms2(mgf_path2, peak2)
             
-            #Sort by intensity
-            
-            peak1.sort(key = lambda x: x.intensity)
-            peak2.sort(key = lambda x: x.intensity)
+            #We already have the correction predicitons so no need to do that again
             
             um.correct_rt(peak2, mean)
             
-            #Align again
+            #Align again after the correction of peak2
             
             rand_corrected_align = ps.align(peak1, peak2, 1.5)
             
             rand_corrected_peaksets = ps.make_peaksets(rand_corrected_align)
             
-            #randomize by spectra and not ID
+            #uncomment bellow if using the randomize by spectra randomization method
             
             #rand_corrected_peaksets = randomize_ms2(mgf_path1, mgf_path2, rand_corrected_peaksets)
             
-            #get the number
+            #get the number of corrected using the random method
             
             rand_num_corrected = len(corrected_peaksets)
             
-            #MS2 numbers
+            #MS2 numbers after randomization, the limit bellow is set to -1 to ensure zero scores are 
+            #included as this method looks for scores GREATER than the threshold passed to the argument
             
             rand_corrected_ms2 = ps.ms2_comparison(rand_corrected_peaksets, -1)
             
-            #get ms2 num
+            #append as a seperate variable
             
             rand_ms2_num = len(rand_corrected_ms2)
-                        
+            
+            '''
+            Check the correction quality as was done above by getting the simialrity scores
+            of all ms2 peaksets generated after randomization and finding out how many
+            low and zero scores there are
+            '''
+            
             rand_low_score_count = 0
             
             rand_zero_score_count = 0
@@ -270,19 +345,27 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
                     
                     rand_zero_score_count+=1
                     
-            #record the results
+            #record the results in a tuple
             
             tup = (v, leng, 1.5, num_corrected, ms2_num, rand_num_corrected, rand_ms2_num, low_score_count, rand_low_score_count, zero_score_count, rand_zero_score_count)
             
+            #Append this to the empty results list at the begining
+            
             results.append(tup)
             
-    #sort the list
+    #sort the list in ascending order by number of peaksets generated
     
     results.sort(key=lambda tup: tup[3])
     
-    #print(results)
+    '''
+    In this test version, there is no need to sort the list any further as we're not
+    returning anything at the end of it, we only want to check the randomization affects
+    of ms2 spectra so that step has been omitted. 
+    '''
     
     best_var, best_ls = picking_best_results(results)
+    
+    #Return the results to be written to a file
     
     return results, best_var, best_ls 
             
