@@ -3,7 +3,7 @@ import numpy
 import sys
 import statistics
 
-#Written by Kiah
+#Written by Kiah McIntosh
 
 class Peak:
     """Class to hold an MS2 peak"""
@@ -15,7 +15,7 @@ class Peak:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.mass},{self.intensity})"
         
-#Written by Kiah
+#Written by Kiah McIntosh
 
 class Spectrum:
     def __init__(self):
@@ -46,7 +46,7 @@ class Spectrum:
         for peak in self.peaks:
             peak.norm_scaled=(peak.sqrt_intensity)/norm
 
-#Written by Kiah
+#Written by Kiah McIntosh
 
 def mgf_reader(file_path):
     """Takes the path to a .mgf file. Returns a list of Spectrum objects, each containing the attributes contained in the
@@ -107,7 +107,7 @@ def mgf_reader(file_path):
     file.close()
     return spectra_list
 
-#Written by Kiah
+#Written by Kiah McIntosh
 
 def cosine_score(spectrum_one, spectrum_two, fragment_tolerance=0.3, modified=True,precursor_tolerance=400):
     """takes two MS2 Spectrum objects, with the fragment tolerance and returns the cosine similarity score.
@@ -168,13 +168,13 @@ def cosine_score(spectrum_one, spectrum_two, fragment_tolerance=0.3, modified=Tr
 
     return total, peak_count
 
-#Written by Don
+#Written by Don Haughton
 
 def similarity_score(spectra_list):
     '''
     Parameters
     ----------
-    spectra_list : A list of spectrum objects
+    spectra_list : A list of spectra objects
     DESCRIPTION: Takes the spectrum objects in the list provided and compares
     Them producing a similarity score to be returned at the end
 
@@ -187,17 +187,13 @@ def similarity_score(spectra_list):
     #list for matched spectra to be stored
     spectra_matches=[]
     
-    #haven't used this, need to work out where to use
     
-    precursor_tolerance=1.0 
+    #Set the fragment tolerance
+    
     fragment_tolerance=0.3
-    modification_tolerance=400
-    
+
     '''
     Extract the spectrum objects in the list as seperate variables
-    08/07- In the current state im running the program there will only ever be 2
-    Spectra being compared so the way they're extracted will work however it will
-    break if the program is ever expanded to compare more
     '''
     
     spectra_1 = spectra_list[0]
@@ -205,47 +201,6 @@ def similarity_score(spectra_list):
     
     #Call the above method to get the similarity score
     
-    score,peak_count=cosine_score(spectra_1,spectra_2,fragment_tolerance)
+    score, peak_count = cosine_score(spectra_1,spectra_2,fragment_tolerance)
         
     return score
-
-#Testing the possibility of different combinations
-
-list1 = mgf_reader("multi1_ms2.MGF")
-list2 = mgf_reader("multi2_ms2.MGF")
-
-low_score_count = 0
-zero_score_count = 0
-total_combinations = 0
-for i in list1:
-    
-    spec1 = i
-    
-    for j in list2:
-        
-        pair = []
-        spec2 = j
-        
-        pair.append(spec1)
-        pair.append(spec2)
-        
-        score = similarity_score(pair)
-        
-        total_combinations += 1
-        
-        if score < 0.9 and score > 0:
-            
-            low_score_count +=1
-            
-        if score == 0:
-            
-            zero_score_count +=1
-
-#Print the results
-
-#print("Total number of combinations: ", total_combinations)            
-#print("Scores lower than 0.9: ", low_score_count)
-#print("scores equal to 0: ", zero_score_count)
-    
-    
-    

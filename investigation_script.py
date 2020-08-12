@@ -4,16 +4,15 @@ Created on Wed Aug  5 15:19:43 2020
 
 @author: Don Haughton
 """
+#Imports
 
 import GPy
-from PeakTools import PeakSet as ps
-import UsefulMethods as um
-from PeakTools import Plotter as plot
+from peak_tools import PeakSet as ps
+import useful_functions as um
 import numpy as np
-import SimilarityCalc as sc
-import random
-import matplotlib.pyplot as plt
-import Investigative_Functions as ivfun
+import investigative_functions as ivfun
+
+#Set up peak objects
 
 p1 = um.peak_creator('multi 1 ms2.csv')
 p2 = um.peak_creator('multi 2 ms2.csv')
@@ -21,42 +20,58 @@ p2 = um.peak_creator('multi 2 ms2.csv')
 um.assign_ms2("multi1_ms2.MGF", p1) 
 um.assign_ms2("multi2_ms2.MGF", p2) 
 
-p1.sort(key = lambda x: x.intensity)
-p2.sort(key = lambda x: x.intensity)
+#Align pre correction
 
 normal_align = ps.align(p1,p2,1.5)
 
+#make peakset objects and show the number
+
 normal_ps = ps.make_peaksets(normal_align)
-
-
 
 print("Normal ps: ", len(normal_ps))
 
-ms2 = ps.ms2_comparison(normal_ps, 0)
-premz1, premz2 = ivfun.get_mz_plot(ms2)
+#Get the number of MS2 peaksets
 
-print("len mz list", len(premz1))
+ms2 = ps.ms2_comparison(normal_ps, 0)
+
+#Plot the difference of mz for all matched ps and ms2 ps respectively
+
+#ivfun.get_mz_plot(normal_ps)
+#ivfun.get_mz_plot(ms2)
+
+#print how many MS2 peaksets are present
 
 print("Normal ms2: ", len(ms2))
 
-rt1, rt2 = plot.rt_extract_convert(ms2)
+#Get anchors from the peaksets
 
-rt_minus = plot.rt_minus_rt_plot(rt1, rt2)
+anchors = ps.ms2_comparison(normal_ps, 0.9)
+
+#Get 2 lists of the retnetion times of the matched MS2 anchors
+
+rt1, rt2 = um.rt_extraction(anchors)
+
+#Get the times of rt1 minus rt2
+
+rt_minus = um.subtract_attributes(rt1, rt2)
+
+#Make numpy arrays of the retention time that'll feed the 
 
 X = np.array(rt2).reshape(len(rt2),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
-all_time = []
+#Extract all the retention times of the feaks in file 2 to be used in correction
 
-for i in p2:
-    
-    time = i.get_rt()
-    all_time.append(time)
+all_time = um.rt_extraction(p2)
     
 all_time = np.array(all_time).reshape(len(all_time),1)
 
+#Set ip the kernel and model, the optimal var and ls figure are already known for this data from the optimization function
+
 gp_kern = GPy.kern.RBF(input_dim=1, variance= 1, lengthscale= 91.56)
 gp_model = GPy.models.GPRegression(X,Y, kernel = gp_kern)    
+
+#Get the predicted RT drift
 
 mean, var = gp_model.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
 
@@ -68,55 +83,46 @@ mean = list(mean.flatten())
 
 um.correct_rt(p2, mean)
 
-#Align again
+#Align again with corrected times
 
 corrected_align = ps.align(p1, p2, 1.5)
 
 corrected_peaksets = ps.make_peaksets(corrected_align)
 
-
+#Get the number corrected
 
 num_corrected = len(corrected_peaksets)
 
 #MS2 numbers
 
 corrected_ms2 = ps.ms2_comparison(corrected_peaksets, 0)
-postmz1, postmz2 = ivfun.get_mz_plot(corrected_ms2)
-print("len mz list", len(postmz1))
-#get ms2 num
-
 ms2_num = len(corrected_ms2)
+
+#Plot the m/z difference of the corrected and corrected ms2 peaksets respectively
+
+#ivfun.get_mz_plot(corrected_peaksets)
+#ivfun.get_mz_plot(corrected_ms2)
 
 print("Corrected ps: ", len(corrected_peaksets))
 
 print("Corrected ms2: ", len(corrected_ms2))
 
-ivfun.numbers_added(normal_ps, corrected_peaksets)
+#This function will print a series of statements stating the number of PS lost in the original alignment
+#and the numbers gained after the RT correction
 
-mz_diff1 = []
-mz_diff2 = []
+#ivfun.numbers_added(normal_ps, corrected_peaksets)
 
-for i in postmz1:
-    
-    if i not in premz1:
-        
-        mz_diff1.append(i)
-        
-for i in postmz2:
-    
-    if i not in premz2:
-        
-        mz_diff2.append(i)
+'''
+The function bellow will look for ms2 peaksets that were removed during the
+correction and reassess them to determine if thy can be re-added as matching
+peaksets
+'''
+recovered = ivfun.get_reomoved_ms2_peaks(normal_ps, corrected_peaksets)
 
-print(len(mz_diff1), len(mz_diff2))
-        
-#diff_minus = plot.rt_minus_rt_plot(mz_diff1, mz_diff2)
+#Extracts the ms2 peaksets from the recovered list
 
-#plt.scatter(mz_diff2, diff_minus, c="#5E62F4", alpha=1)
-#plt.show() 
+ms2_tog = ps.ms2_comparison(recovered, 0)
 
-tog = ivfun.get_reomoved_ms2_peaks(normal_ps, corrected_peaksets)
+#Plots the difference between these
 
-ms2_tog = ps.ms2_comparison(tog, 0)
-
-a,b = ivfun.get_mz_plot(ms2_tog)
+#ivfun.get_mz_plot(ms2_tog)

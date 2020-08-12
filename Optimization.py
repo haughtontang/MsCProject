@@ -1,9 +1,8 @@
 import GPy
-from PeakTools import PeakSet as ps
-import UsefulMethods as um
-from PeakTools import Plotter as plot
+from peak_tools import PeakSet as ps
+import useful_functions as um
 import numpy as np
-import SimilarityCalc as sc
+import similarity_calc as sc
 
 def find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1, mgf_path2):
     '''
@@ -89,19 +88,13 @@ def find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1,
             
             #Extract RT values from the peaks
             
-            rt1, rt2 = plot.rt_extract_convert(anchors)
+            rt1, rt2 = um.rt_extraction(anchors)
             
-            rt_minus = plot.rt_minus_rt_plot(rt1, rt2)
+            rt_minus = um.subtract_attributes(rt1, rt2)
             
             #get the time in peak2
             
-            all_time = []
-            
-            for peak in peak2:
-                
-                time = peak.get_rt()
-                
-                all_time.append(time)
+            all_time = um.rt_extraction(peak2)
             
             #Convert to numpy arrays    
             
@@ -174,7 +167,7 @@ def find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1,
             
             results.append(tup)
             
-    #sort the list
+    #sort the list by number of peaksets generated
     
     results.sort(key=lambda tup: tup[2])
 
@@ -200,6 +193,8 @@ def check_correction_quality(list_of_peaksets):
     scores : List of floats
     '''
     
+    #List of scores to return at the end
+    
     scores = []
     
     for sets in list_of_peaksets:
@@ -214,15 +209,15 @@ def check_correction_quality(list_of_peaksets):
             
             #Loop over the peak list in peakset
         
-            for peak in sets.peaks:
+            for peak in sets.get_peaks():
                 
                 #Not all peak objects have an ms2 attrbute so this checks for those that do
                 
-                if peak.ms2 != None:
+                if peak.get_ms2() != None:
                     
                     #If one is found add it to the ms2 list
                     
-                    ms2.append(peak.ms2)
+                    ms2.append(peak.get_ms2())
             
             '''
             Of the matched peaks, some may have an ms2 spectrum whilst the others dont, by ensuring
@@ -251,7 +246,7 @@ def picking_best_results(results_list):
     ----------
     results_list : List of tuples
     
-    DESCRIPTION: THis function is a helper function designed to be used in
+    DESCRIPTION: This function is a helper function designed to be used in
     conjunction with the find_best_hyperparameters function above. It takes the list of results
     generated in the function and sorts them based on the number of peaksets generated
     and finds the best parameters best on the ms2 quality of the corrected peaksets
@@ -260,7 +255,7 @@ def picking_best_results(results_list):
     Float: variance value
     Float: length scale value
     '''
-    
+
     #Get the best results of the data
     
     top_result = results_list[0]
@@ -277,17 +272,17 @@ def picking_best_results(results_list):
         
         #If its equal to the best result or within 10 peaks of it
         
-        peak_range = ps + 10
+        peak_range = ps + 3
         
-        boolean_check = res[2] <= ps and res[2] <= peak_range
+        boolean_check = res[2] <= peak_range
         
         if res[2] == ps or boolean_check == True:
             
             best_results.append(res)
-    
+
     #sort this list on the number of ms2 peaksets generated        
     
-    best_results.sort(key=lambda tup: tup[3])
+    best_results.sort(key=lambda tup: tup[3], reverse = True)
 
     #Take the best result of this list
 
@@ -301,28 +296,16 @@ def picking_best_results(results_list):
     
     for i in best_results:
         
-        if i[3] < best_ps or i[4] > best_low or i[5] > best_zero:
+        if i[4] > best_low or i[5] > best_zero:
             
             best_results.remove(i)
-         
-    best_var = []
-    best_leng = []
+            
+    #With all the low scoring values remove, return the values that improve the
+    #The number of ms2 peaksets and produce the lowest number of peaksets
     
-    #Get the best var and ls values if the list of the best is >1
+    best = best_results[0]
     
-    for top in best_results:
-        
-        #inpack the values in the tuple
-        
-        v, ls, p, m, l, z = top
-        
-        best_var.append(v)
-        best_leng.append(ls)
-    
-    #Sort the list and return the highest results of the the var and ls    
-    
-    best_var.sort(key=float, reverse = True)
-    best_leng.sort(key=float)
-
-    return best_var[0], best_leng[0]
+    best_v, best_ls, best_ps, best_ms2, best_low, best_zero = best
+            
+    return best_v, best_ls
 

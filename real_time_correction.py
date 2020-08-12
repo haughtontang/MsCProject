@@ -6,13 +6,12 @@ Created on Tue Jul 28 09:18:29 2020
 """
 
 import GPy
-from PeakTools import PeakSet as ps
-import UsefulMethods as um
-from PeakTools import Plotter as plot
+from peak_tools import PeakSet as ps
+import useful_functions as um
 import numpy as np
-import SimilarityCalc as sc
-import Optimization as gpc
-import Investigative_Functions as invfun
+import similarity_calc as sc
+import optimization as gpc
+import investigative_functions as invfun
 
 '''
 Take 2 paths of picked peaks as its argument and convert the information in these files into
@@ -59,30 +58,29 @@ def incoming_peaks(real_time_run):
         list_of_live_runs.append(real_time_run)
         
 '''
-    '''
-    The way that peak_creator is set up this wont work, maybe need to create a similar
-    but realted method that does the exact same thing but without the file reader
+'''
+The way that peak_creator is set up this wont work, maybe need to create a similar
+but realted method that does the exact same thing but without the file reader
 
-    '''
-    #Create peaks from this list
-    '''
-    list_of_peaks = um.peak_creator(real_time_run)
-    
-    #The file paths may also have to be arguments to this function
-    
-    first_file = first_run_peaks(filepath, mfg_path)
-    
-    #sort these based on intensity
-    
-    first_file.sort(key = lambda x: x.intensity, reverse = True)
-    list_of_peaks.sort(key = lambda x: x.intensity, reverse = True)
-    
-    #perform alignment
-    
-    ps = alignment(first_file, list_of_peaks)
-    
-    return ps
-  '''
+'''
+#Create peaks from this list
+'''
+list_of_peaks = um.peak_creator(real_time_run)
+  
+#The file paths may also have to be arguments to this function
+  
+first_file = first_run_peaks(filepath, mfg_path)
+  
+#sort these based on intensity
+  
+first_file.sort(key = lambda x: x.intensity, reverse = True)
+list_of_peaks.sort(key = lambda x: x.intensity, reverse = True)
+  
+#perform alignment
+  
+ps = alignment(first_file, list_of_peaks)
+return ps
+'''
 #Seperate alignment method to clean up the incoming_peaks function and later functions
   
 def alignment(first_run_peaks, incoming_peaks, RT_tol):
@@ -97,11 +95,11 @@ def create_model(peakset_list, variance, lengthscale):
     
     anchors = ps.ms2_comparion(peakset_list, 0.9)
     
-    first_run_rt, incoming_rt = plot.rt_extract_convert(anchors)
+    first_run_rt, incoming_rt = um.rt_extraction(anchors)
 
     #Get the values of RT-RT from the 2 files respectively, this will be used to make the GP model
 
-    rt_minus = plot.rt_minus_rt_plot(multi1_rt, multi2_rt)
+    rt_minus = um.subtract_attributes(multi1_rt, multi2_rt)
         
     #Need to make it the list into an array so it can be used in the GP
     

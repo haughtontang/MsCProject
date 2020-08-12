@@ -69,9 +69,16 @@ class Peak(object):
 
     def get_ms2(self):
         
-        return self.ms2  
+        return self.ms2
+    
+    #Needed as all ms2 attributes are initially set to null. this will only be called 
+    #during the stage of aligning ms2 to the peak objects
+    
+    def set_ms2(self, ms2):
+        
+        self.ms2 = ms2
 
-import SimilarityCalc as sc        
+import similarity_calc as sc        
 
 '''
 Peaksets are generated during the alignment of peaks
