@@ -135,8 +135,6 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
     Returns
     -------
     results: list of tuples
-    best_var : Float: best variance value
-    best_ls : Float: best ls value
     '''
     
     #variance values
@@ -362,12 +360,10 @@ def find_best_hypparams(filepath_to_match, filepath_to_correct, mgf_path1, mgf_p
     returning anything at the end of it, we only want to check the randomization affects
     of ms2 spectra so that step has been omitted. 
     '''
-    
-    best_var, best_ls = picking_best_results(results)
-    
+
     #Return the results to be written to a file
     
-    return results, best_var, best_ls 
+    return results
             
 def check_correction_quality(list_of_peaksets):
     
@@ -430,229 +426,32 @@ def check_correction_quality(list_of_peaksets):
                 
     return scores
 
-def picking_best_results(results_list):
-    
-    print("len results", len(results_list))
-    
-    top_result = results_list[0]
-    
-    #print(len(top_result))
-    
-    #unpack best results
-    
-    v, leng, time, num_corrected, ms2_num, rand_num_corrected, rand_corrected_ms2, low_score_count, rand_low_score_count, zero_score_count, rand_zero_score_count = top_result
-    
-    best_results = []
-    
-    #Make a list of best results based on number of ps generated
-    
-    for res in results_list:
-        
-        if res[3] == num_corrected:
-            
-            best_results.append(res)
-    
-    #sort this list on the number of ms2 peaksets generated        
-    
-    best_results.sort(key=lambda tup: tup[4])
-    print("len best results", len(best_results))
-    best = best_results[0]
-    
-    v, leng, time, num_corrected, ms2_num, rand_num_corrected, rand_corrected_ms2, low_score_count, rand_low_score_count, zero_score_count, rand_zero_score_count = best
-            
-    #remove results from the best list
-    '''
-    for i in best_results:
-        
-        if i[3] < best_ps or i[4] > best_low or i[5] > best_zero:
-            
-            best_results.remove(i)
-     '''       
-    best_var = []
-    best_leng = []
-    
-    print("list of the best :")
-    print(best_results)
-    print()
-    
-    #Get the best var and ls values if the list of the best is >1
-    
-    for top in best_results:
-        
-        v, leng, time, num_corrected, ms2_num, rand_num_corrected, rand_corrected_ms2, low_score_count, rand_low_score_count, zero_score_count, rand_zero_score_count = top
-        
-        best_var.append(v)
-        best_leng.append(leng)
-    
-    #Sort the list and return the lowest results of the the var and ls    
-    
-    best_var.sort(key=float, reverse = True)
-    best_leng.sort(key=float)
-   
-    
-    print("variance list:")
-    print(best_var)
-    print()
-    print("LS list:")
-    print(best_leng)
-   
-    return best_var[0], best_leng[0]
 
-'''
-#Correcting in the script
+#Call the function and get the results
 
-p1 = um.peak_creator('multi 1 ms2.csv')
-p2 = um.peak_creator('multi 2 ms2.csv')
-  
-um.assign_ms2("multi1_ms2.MGF", p1) 
-um.assign_ms2("multi2_ms2.MGF", p2) 
+resu = find_best_hypparams('multi 1 ms2.csv', 'multi 2 ms2.csv',"multi1_ms2.MGF","multi2_ms2.MGF")
 
-p1.sort(key = lambda x: x.intensity)
-p2.sort(key = lambda x: x.intensity)
+#empty list to append to
 
-normal_align = ps.align(p1,p2,1.5)
-
-normal_ps = ps.make_peaksets(normal_align)
-
-print("Normal ps: ", len(normal_ps))
-
-ms2 = ps.ms2_comparison(normal_ps, 0)
-
-print("Normal ms2: ", len(ms2))
-
-
-id_list1 = []
-id_list2 = []
-for i in normal_ps:
-    if i.number_of_peaks > 1:
-        for j in i.peaks:
-            
-            if j.file == "multi 1 ms2.csv":
-               # yup = j.ms2
-                
-                key = j.id
-                
-                id_list1.append(key)
-                
-            else:
-                
-                #yup = j.ms2
-                
-                key = j.id
-                
-                id_list2.append(key)
-                
-
-rt1, rt2 = plot.rt_extract_convert(ms2)
-
-rt_minus = plot.rt_minus_rt_plot(rt1, rt2)
-
-X = np.array(rt2).reshape(len(rt2),1)
-Y = np.array(rt_minus).reshape(len(rt_minus),1)
-
-all_time = []
-
-for i in p2:
-    
-    time = i.get_rt()
-    all_time.append(time)
-    
-all_time = np.array(all_time).reshape(len(all_time),1)
-'''
-resu, variance_val, ls_val = find_best_hypparams('multi 1 ms2.csv', 'multi 2 ms2.csv',"multi1_ms2.MGF","multi2_ms2.MGF")
-
-
-print("var=", variance_val, "ls = ", ls_val)
-'''
-gp_kern = GPy.kern.RBF(input_dim=1, variance= variance_val, lengthscale= ls_val)
-gp_model = GPy.models.GPRegression(X,Y, kernel = gp_kern)    
-
-mean, var = gp_model.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
-
-#convert from np array to list
-
-mean = list(mean.flatten())
-
-#This method corrects the RT of the file_to_correct by adding the predictions (mean) produced by the model
-
-um.correct_rt(p2, mean)
-
-#Align again
-
-corrected_align = ps.align(p1, p2, 5)
-
-corrected_peaksets = ps.make_peaksets(corrected_align)
-
-#get the number
-
-num_corrected = len(corrected_peaksets)
-
-#MS2 numbers
-
-corrected_ms2 = ps.ms2_comparison(corrected_peaksets, 0)
-
-#get ms2 num
-
-ms2_num = len(corrected_ms2)
-
-print("len after cor: ", num_corrected)
-
-print("ms2 after cor: ", ms2_num)       
-
-corrected_id_list1 = []
-corrected_id_list2 = []
-
-for i in corrected_ms2:
-    if i.number_of_peaks > 1:
-        for j in i.peaks:
-           
-            if j.file == "multi 1 ms2.csv":
-               # yup = j.ms2
-                
-                key = j.id
-                
-                corrected_id_list1.append(key)
-                
-            else:
-                
-                #yup = j.ms2
-                
-                key = j.id
-                
-                corrected_id_list2.append(key)
-
-count = 0
-        
-for s in id_list1:
-    
-    if s not in corrected_id_list1:
-        
-        #print(s)
-        count+=1
- 
-print("numbers removed from ms2 in file1", count)
-
-count = 0
-for s in id_list2:
-    
-    if s not in corrected_id_list2:
-        
-        #print(s)
-        count+=1
-        
-print("numbers removed from ms2 in file2", count)
-
-
-
-'''
 file = []
+
+'''
+THe loop bellow will go through the list of tuples generated from the function
+unpack each tuple into component variables
+convert these to strings and given labels so they can be easily written to a file and read
+and append these to the file list above
+'''
+
 for i in resu:
     
     v, leng, time, num_corrected, ms2_num, rand_num_corrected, rand_corrected_ms2, low_score_count, rand_low_score_count, zero_score_count, rand_zero_score_count = i
 
     line = "var: ", str(v), "Lengthscale: ", str(leng), "RT Tole", str(time), "PS num: " ,str(num_corrected), "MS2 PS: ", str(ms2_num), "Rand ps num: ", rand_num_corrected, "rand #ms2: ", rand_corrected_ms2 ,"Normal Scores < 0.9: ", str(low_score_count),"rand Scores < 0.9: ", str(rand_low_score_count),"Normal Scores = 0: ", str(zero_score_count),"rand Scores = 0: ", str(rand_zero_score_count)
     file.append(line)
-    
+ 
+#Write the file list above to file. This is a represntation of all parameters
+#tested in the find_best_hypparams function    
+ 
 with open('Rand ID for ms2 test 3.txt', 'w') as f:
     for item in file:
         line = str(item)
