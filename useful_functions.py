@@ -189,7 +189,13 @@ def rt_extraction(peak_obj_list):
 
     rt_converted = []
     
-    first_item = peak_obj_list[0]
+    first_item = None
+    
+    for i in peak_obj_list:
+        
+        first_item = i
+        
+        break
     
     #Check if it is a peak or peakset obj list
     
@@ -235,6 +241,8 @@ def rt_extraction(peak_obj_list):
         
         names = list(set(names))
         
+        names.sort()
+        
         '''
         in the case of the multi beers we're working with 2 files so make 2 rt lists to append to
         these will be returned at the end once they've been populated'
@@ -271,7 +279,7 @@ def rt_extraction(peak_obj_list):
             
             #loop over peak list attributes that are part of those objects
             
-            for peak in peakset.peaks:
+            for peak in peakset.get_peaks():
                 
                 #Get the peaks in that list attribute and append it to this list
                 

@@ -9,7 +9,6 @@ import GPy
 from peak_tools import PeakSet as ps
 import useful_functions as um
 import numpy as np
-import similarity_calc as sc
 import optimization as gpc
 import investigative_functions as invfun
 
@@ -99,7 +98,7 @@ def create_model(peakset_list, variance, lengthscale):
 
     #Get the values of RT-RT from the 2 files respectively, this will be used to make the GP model
 
-    rt_minus = um.subtract_attributes(multi1_rt, multi2_rt)
+    rt_minus = um.subtract_attributes(first_run_rt, incoming_rt)
         
     #Need to make it the list into an array so it can be used in the GP
     
@@ -238,45 +237,74 @@ def main(first_run_fp, first_run_mgf, live_run, live_run_mgf, RT_tol):
     
     live_peaks = create_peak_objects(live_run, live_run_mgf)
     
-    #Align the peaks
+    size = len(live_peaks)
     
-    peaksets = alignment(first_run, live_peaks, RT_tol)
+    #A loop to split up this list into different parts to simulate a RT run
     
-    #Find the optimal optimization parameters
+    list_of_splits = []
     
-    var, ls = create_optimized_gp_model(peaksets)
+    #splitting by 2 this time so should get 2 results
+       
+    split_range = size // 2
     
-    #Create the model
+    flag = 0
     
-    model = create_model(peaksets, var, ls)
+    split = []
     
-    #Correct RT
-    
-    correct_rt(model, peaksets)
-    
-    #Realign 
-    
-    corrected_alignment = alignment(first_run, live_peaks, RT_tol)
-    
-    #Investigate differences in MS2
-    
-    corrected_alignment = invfun.get_reomoved_ms2_peaks(peaksets, corrected_alignment)
-    
-    #Check if there is a new paired peakset
-            
-    #Search for potential new anchors and update the model
+    while flag < split_range:
         
-    model = create_model(corrected_alignment, var, ls)
+        split.append(live_peaks[flag])
+        
+        live_peaks.remove(live_peaks[flag])
+        
+        flag+=1
+        
+    list_of_splits.append(split)    
+        
+    #Do the same again but for the remaining peaks
     
-    #Rerun the entire process again with the new model
+    split = []
     
-    #Return a .csv file of correct times or something along those lines
+    for i in range(0, len(live_peaks)-1):
+        
+        split.append(live_peaks[i])
 
-'''
-Not sure how this method could be called continuously during a live lc-ms experiment
-without using a loop or recursion or something similar. Need to ask for some advice
-But overall I think this should would. 
-'''
+    for i in list_of_splits:
+        
+        #Align the peaks
+        
+        peaksets = alignment(first_run, i, RT_tol)
+        
+        #Find the optimal optimization parameters
+        
+        var, ls = create_optimized_gp_model(peaksets)
+        
+        #Create the model
+        
+        model = create_model(peaksets, var, ls)
+        
+        #Correct RT
+        
+        correct_rt(model, peaksets)
+        
+        #Realign 
+        
+        corrected_alignment = alignment(first_run, i, RT_tol)
+        
+        #Investigate differences in MS2
+        
+        corrected_alignment = invfun.get_reomoved_ms2_peaks(peaksets, corrected_alignment)
+        
+        #Check if there is a new paired peakset
+                
+        #Search for potential new anchors and update the model
+            
+        model = create_model(corrected_alignment, var, ls)
+        
+        #Rerun the entire process again with the new model
+        
+        #Return a .csv file of correct times or something along those lines
+
 
         
     
