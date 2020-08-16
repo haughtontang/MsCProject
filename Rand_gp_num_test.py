@@ -1,19 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug  4 12:34:15 2020
 
-@author: Don Haughton
-"""
 from peak_tools import PeakSet as ps
 import useful_functions as um
 import numpy as np
 import optimization
 
 '''
-Bellow is a script that sets up peak objects, aligns them and check the the number
-of peaksets. After that the preditions of RT drift are made using a random GP number
+Below is a script that sets up peak objects, aligns them and check the number
+of peaksets. After that, the predictions of RT drift are made using a random GP number
 generator. This is done to determine if the increased number of peaksets that are seen
-at the end of a normal correction run are a feature of this particulary dataset or
+at the end of a normal correction run are a feature of this particularly dataset or
 happen regardless. 
 '''
 
@@ -58,7 +53,7 @@ rt_minus = um.subtract_attributes(rt1, rt2)
 X = np.array(rt2).reshape(len(rt2),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
-#Make random gauss predicitons 
+#Make random gauss predictions 
 
 from random import gauss
 

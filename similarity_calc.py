@@ -193,7 +193,7 @@ def similarity_score(spectra_list):
     fragment_tolerance=0.3
 
     '''
-    Extract the spectrum objects in the list as seperate variables
+    Extract the spectrum objects in the list as separate variables
     '''
     
     spectra_1 = spectra_list[0]

@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug  5 13:15:29 2020
-
-@author: Don Haughton
-"""
 
 from peak_tools import PeakSet as ps
 import useful_functions as um
@@ -16,13 +10,13 @@ def get_matched(peakset):
     Parameters
     ----------
     peakset : list of peakset objects
-    DESCRIPTION: Will take the list given and look exclusviely for peaksets
+    DESCRIPTION: Will take the list given and look exclusively for peaksets
     that contain more than 1 peak and return a list of peaksets meeting this
     condition. 
 
     Returns
     -------
-    matched : list of peakset objects with >1 peaks
+    matched: list of peakset objects with >1 peaks
 
     '''
     
@@ -179,8 +173,8 @@ def numbers_added(peaksets, corrected_peaksets):
    '''
    Parameters
    ----------
-   peaksets : list of peakset objects pre correction
-   corrected_peaksets : list of peakset objects post correction
+   peaksets : list of peakset objects pre-correction
+   corrected_peaksets: list of peakset objects post correction
    DESCRIPTION: By using the IDs of the peaksets before and after correction
    and looking at what is missing/added we can determine which peaksets were added
    which were not previously
@@ -206,7 +200,7 @@ def numbers_added(peaksets, corrected_peaksets):
    
    '''
    If the ID of a peak in corrected peakset is not in the 
-   ID list of the peaks pre correction then it has been newly added and appended
+   ID list of the peaks pre-correction then it has been newly added and appended
    to the differences list. These lists are dealing with peaks exclusively from file 1
    '''
    
@@ -218,7 +212,7 @@ def numbers_added(peaksets, corrected_peaksets):
             
    differences_file2 = []
    
-   #Exact same as a above except these are done for the differences between file 2 pre and post correction
+   #Exact same as above except these are done for the differences between file 2 pre and post correction
    
    for i in corrected_id_list2:
         
@@ -228,7 +222,7 @@ def numbers_added(peaksets, corrected_peaksets):
                 
    print("There are %s newly created peakset pairs that weren't present before correction" % len(differences_file1)) 
    
-   #Using length of the lists we can also determine how many peaksets were removed
+   #Using the length of the lists we can also determine how many peaksets were removed
    
    number_removed = len(corrected_peaksets) - (len(peaksets) - len(differences_file1))
 
@@ -236,7 +230,7 @@ def numbers_added(peaksets, corrected_peaksets):
    
    #get numbers for ms2
    
-   #Make seperate peakset lists for both conditions but this time only consisting of 
+   #Make separate peakset lists for both conditions but this time only consisting of 
    #Peaksets that have matching ms2
    
    pre_ms2 = ps.ms2_comparison(peaksets,0)
@@ -249,14 +243,14 @@ def numbers_added(peaksets, corrected_peaksets):
      
    corrected_id_list1, corrected_id_list2 =  get_matched_ids(post_ms2)
    
-   #Just as above, find the discrepencies between their ID numbers to find out 
+   #Just as above, find the discrepancies between their ID numbers to find out 
    #How many were added and how many were removed
              
    differences_file1 = []
    
    '''
    If the ID of a peak in corrected peakset is not in the 
-   ID list of the peaks pre correction then it has been newly added and appended
+   ID list of the peaks pre-correction then it has been newly added and appended
    to the differences list. These lists are dealing with peaks exclusively from file 1
    '''
    
@@ -297,8 +291,7 @@ def plot_removed_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1
 
    DESCRIPTION: Similar to the methods used in numbers_added() it identifies the ids of the
    ms2 peaksets that were removed and uses these to recover the peak objects corresponding to
-   the id in peaksets. The differnece in the m/z of these peaks is then plottet
-   as a scatter plot, which is returned at the end of this function. 
+   the id in peaksets. The difference in the m/z of these peaks is then plotted as a scatter plot, which is returned at the end of this function. 
 
    Returns
    -------
@@ -310,7 +303,7 @@ def plot_removed_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1
    
    removed1 = []
    
-   #Scan the id list and find what doesnt match, these represent the removed ms2 peaks in file1
+   #Scan the id list and find what doesn't match, these represent the removed ms2 peaks in file1
    
    for i in id_list1:
        
@@ -320,7 +313,7 @@ def plot_removed_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1
            
    removed2 = []
    
-   #Scan the id list and find what doesnt match, these represent the removed ms2 peaks in file2
+   #Scan the id list and find what doesn't match, these represent the removed ms2 peaks in file2
    
    for i in id_list2:
        
@@ -328,7 +321,7 @@ def plot_removed_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1
            
            removed2.append(i)
    
-   #With the ids, I can extract the peaks into seperate lists of peaks by matching the ids in the list 
+   #With the ids, I can extract the peaks into separate lists of peaks by matching the ids in the list 
    
    tog_peaks1 = []
    tog_peaks2 = []
@@ -386,9 +379,7 @@ def plot_added_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1, 
    corrected_id_list2 : list of IDs from the second file of peaks that make up the given peakset objects post correction
 
    DESCRIPTION: Similar to the methods used in numbers_added() it identifies the ids of the
-   ms2 peaksets that were added and uses these to recover the peak objects corresponding to
-   the id in peaksets. The differnece in the m/z of these peaks is then plottet
-   as a scatter plot, which is returned at the end of this function. 
+   ms2 peaksets that were added and uses these to recover the peak objects corresponding to the id in peaksets. The difference in the m/z of these peaks is then plotted as a scatter plot, which is returned at the end of this function. 
 
    Returns
    -------
@@ -399,7 +390,7 @@ def plot_added_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1, 
    
    added1 = []
    
-   #Scan the id list and find what doesnt match, these represent the removed ms2 peaks in file1
+   #Scan the id list and find what doesn't match, these represent the removed ms2 peaks in file1
    
    for i in corrected_id_list1:
        
@@ -409,7 +400,7 @@ def plot_added_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1, 
               
    added2 = []
    
-   #Scan the id list and find what doesnt match, these represent the removed ms2 peaks in file2
+   #Scan the id list and find what doesn't match, these represent the removed ms2 peaks in file2
    
    for i in corrected_id_list2:
        
@@ -417,7 +408,7 @@ def plot_added_ms2_ps_mz_diff(peaksets, id_list1, id_list2, corrected_id_list1, 
            
            added2.append(i)
            
-   #With the ids, I can extract the peaks into seperate lists of peaks by matching the ids in the list 
+   #With the ids, I can extract the peaks into separate lists of peaks by matching the ids in the list 
    
    tog_peaks1 = []
    tog_peaks2 = []
@@ -471,7 +462,7 @@ def get_mz_plot(peaksets):
     Parameters
     ----------
     peaksets : list of peakset objects
-    DESCRIPTION: extarcts the peaks contained within the peakset,
+    DESCRIPTION: extracts the peaks contained within the peakset,
     takes their mz values and plots the differences between them. This is
     only done for matched peaksets.
     Returns
@@ -524,10 +515,9 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
    peaksets : list of peakset objects pre correction
    corrected_peakset : list of peakset objects post correction
    DESCRIPTION: By using the ID lists of the peakset provided in the argument
-   The MS2 peaks that were removed during correction are found through use of these IDs. 
-   From there the MS2 peaks that were removed have their m/z difference reexamined to determine
-   if their removal was a mistake. If the difference is within a certain threshold, they are readded
-   to the corrected peakset list as a matching peakset.
+   The MS2 peaks that were removed during correction are found through the use of these IDs. 
+   From there the MS2 peaks that were removed have their m/z difference reexamined to 
+   if their removal was a mistake. If the difference is within a certain threshold, they are readded to the corrected peakset list as a matching peakset.
    Returns
    -------
    final_corrected_peaksets : list of peakset objects with the potential
@@ -551,7 +541,7 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
    
    removed1 = []
    
-   #Scan the id list and find what doesnt match, these represent the removed ms2 peaks in file2
+   #Scan the id list and find what doesn't match, these represent the removed ms2 peaks in file2
    
    for i in id_list1:
        
@@ -563,7 +553,7 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
    
    removed2 = []
    
-   #Scan the id list and find what doesnt match, these represent the removed ms2 peaks in file2
+   #Scan the id list and find what doesn't match, these represent the removed ms2 peaks in file2
    
    for i in id_list2:
        
@@ -571,7 +561,7 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
            
            removed2.append(i)
    
-   #With the ids, I can extract the peaks into seperate lists of peaks by matching the ids in the list 
+   #With the ids, I can extract the peaks into separate lists of peaks by matching the ids in the list 
    
    tog_peaks1 = []
    tog_peaks2 = []
@@ -598,7 +588,7 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
    Match the peakset together in a list in order to convert them
    from peaks to peaksets
    
-   This will be required to ensure peaksets arent made from peaks that dont
+   This will be required to ensure peaksets arent made from peaks that don't
    match
    '''
    
@@ -609,7 +599,7 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
        '''
        Match the peaks in both lists at the respective index
        This will ensure that they are the peaks that match, as it'll match their extraction order from
-       the list of peaksets and using the same index for the seperate lists ensures they're appended together
+       the list of peaksets and using the same index for the separate lists ensures they're appended together
        '''
        
        peak_list = [tog_peaks1[i],tog_peaks2[i]]
@@ -627,27 +617,27 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
    
    for i in recovered_ps:
        
-       #List has 2 items per index so split these into seperate peak variables
+       #List has 2 items per index so split these into separate peak variables
        
        p1 = i[0]
        p2 = i[1]
        
-       #Get the mz valies
+       #Get the mz values
        
        mz1 = p1.get_mz()
        mz2 = p2.get_mz()
        
-       #Take the difference of the 2
+       #Take the difference between the 2
        
        difference = mz1 - mz2
        
-       #Imploy stricter tolerances to esnure they're the same
+       #Imploy stricter tolerances to ensure they're the same
        
        limit = 0.00009
        
        #If its out of this range, delete it
        
-       #Use the negative incase we arent dealing with positive numbers all the time
+       #Use the negative in case we aren't dealing with positive numbers all the time
        
        if difference > limit or difference < (limit * -1):
            
@@ -657,7 +647,7 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
    
    recovered_ps = ps.make_peaksets(recovered_ps)
    
-   #now check the similairty score of their MS2 as a final QC
+   #now check the similarity score of their MS2 as a final QC
    
    for i in recovered_ps:
        
@@ -681,21 +671,21 @@ def get_reomoved_ms2_peaks(peaksets, corrected_peakset):
         
         score = sc.similarity_score(spec_list)
         
-        #Apply a stricter similarty threshold for these ms2 peaks
+        #Apply a stricter similarity threshold for these ms2 peaks
         
         if score < 0.97:
             
-            #If it is bellow this threshold- remove it
+            #If it is below this threshold- remove it
             
             recovered_ps.remove(i)
    
-   #To avoid dealing with file name, do it by indivudal peak
+   #To avoid dealing with filenames, do it by individual peak
    
-   #To do this, extract indiviudal peaks from the recovered list
+   #To do this, extract individual peaks from the recovered list
    
    ms2_peaks = []
    
-   #Get the indiviudal peaks from the list
+   #Get the individual peaks from the list
    
    for i in recovered_ps:
        

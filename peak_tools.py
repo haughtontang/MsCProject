@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun 22 14:24:53 2020
-
-@author: Don Haughton
-"""
 
 import statistics
 
@@ -11,7 +5,7 @@ import statistics
 Class bellow is a representation of a peak
 The function in the useful_functions.py files is used
 to create objects of this class. Throughout the program
-the vast majoirt of functions are built to accept list of peak
+the vast majority of functions are built to accept a list of peak
 objects or peakset objects
 '''
 
@@ -82,7 +76,7 @@ import similarity_calc as sc
 
 '''
 Peaksets are generated during the alignment of peaks
-during the alignmnet the peak objects are converted to peaksets
+during the alignment, the peak objects are converted to peaksets
 '''
 
 class PeakSet(object):
@@ -201,7 +195,7 @@ class PeakSet(object):
         '''
         m/z differences between peaks that originate from the same metabolite will have a
         tight difference between the 2. This means that the buffer for m/z must be tight
-        or else the risk of false positives is evelvated. RT is set by the user as this
+        or else the risk of false positives is elevated. RT is set by the user as this
         tolerance can be more variable
         '''
     
@@ -236,14 +230,14 @@ class PeakSet(object):
          
         '''
         loop over every peak in the first list, comparing it to every peak in the 
-        second list, if they fall within an acceptable range- dictated by the upper
-        and lower tolerances set by the buffers, then its used to created a new peakset list
+        the second list, if they fall within an acceptable range- dictated by the upper
+        and lower tolerances set by the buffers, then it's used to create a new peakset list
         
-        once the first peak in the first file has been comapred to all peaks in the second file
+        once the first peak in the first file has been compared to all peaks in the second file
         the next peak is checked and this process continues until all peaks have been compared
         and peakset lists are created.
         
-        in the list bellow, i and j both represent peaks
+        in the list below, i and j both represent peaks
         '''
         
         for i in largest:
@@ -277,7 +271,7 @@ class PeakSet(object):
                     matched_large.append(i)
                     matched_small.append(j)
         
-        #Use the list of matched peaks to find the ones that didnt match            
+        #Use the list of matched peaks to find the ones that didn't match            
         
         for i in largest:
             
@@ -289,7 +283,7 @@ class PeakSet(object):
                 
                 unmatched_large.append(i)
         
-        #Use the list of matched peaks to find the ones that didnt match                    
+        #Use the list of matched peaks to find the ones that didn't match                    
         
         for i in smallest:
             
@@ -304,7 +298,7 @@ class PeakSet(object):
         '''
         If the peaks match then they make up one peakset
         The argument for a peakset is a list of peaks so the matched large and matched small
-        lists need to be combined together, the loop bellow will achieve this
+        lists need to be combined, the loop bellow will achieve this
         '''
     
         #Empty merged list variable to append to
@@ -313,7 +307,7 @@ class PeakSet(object):
         
         for i in range(0, len(matched_large)):
             
-            #Use the indexes to append them together, ie so the peak that are matched are in the list together
+            #Use the indexes to append them together, ie so the peak that is matched are in the list together
             
             merged.append(matched_large[i])
             merged.append(matched_small[i])
@@ -338,7 +332,7 @@ class PeakSet(object):
         
         for i in unmatched_large:
             
-            #Add to unmacthed, making it a list containing one peak
+            #Add to unmatched, making it a list containing one peak
             
             unmatched.append(i)
             
@@ -350,11 +344,11 @@ class PeakSet(object):
             
             unmatched = []
             
-        #Same as above but for the other unmacthed list
+        #Same as above but for the other unmatched list
             
         for i in unmatched_small:
             
-             #Add to unmacthed, making it a list containing one peak
+             #Add to unmatched, making it a list containing one peak
             
             unmatched.append(i)
             
@@ -415,8 +409,8 @@ class PeakSet(object):
         m/z, rt and ms2
         Returns
         -------
-        ms2_comp : A seperate list containing only matching peaksets that both have
-        an ms2 spectrum object with a similairty score above a certain threshold
+        ms2_comp : A separate list containing only matching peaksets that both have
+        an ms2 spectrum object with a similarity score above a certain threshold
         '''
         
         #Empty list of comparisons to be returned
@@ -439,7 +433,7 @@ class PeakSet(object):
             
                 for peak in ps.get_peaks():
                     
-                    #Not all peak objects have an ms2 attrbute so this checks for those that do
+                    #Not all peak objects have an ms2 attribute so this checks for those that do
                     
                     if peak.get_ms2() != None:
                         
@@ -448,7 +442,7 @@ class PeakSet(object):
                         ms2.append(peak.ms2)
                 
                 '''
-                Of the matched peaks, some may have an ms2 spectrum whilst the others dont, by ensuring
+                Of the matched peaks, some may have an ms2 spectrum whilst the others don't, by ensuring
                 that the ms list is larger than 1 and there are no null values we can check the similarity
                 score of both the spectra
                 '''
@@ -458,7 +452,7 @@ class PeakSet(object):
                     '''
                     The function that checks the similarity takes a list of spectrum objects
                     As its argument and returns a similarity score
-                    If this score is above the treshold then the peaks match on m/z,rt and ms2-
+                    If this score is above the threshold then the peaks match on m/z, rt and ms2-
                     Append that peakset to the list at the beginning of the function
                     '''
                     

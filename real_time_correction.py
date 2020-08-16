@@ -24,15 +24,15 @@ def create_peak_objects(filepath, mgf_path):
     
     return peaks
 
-#dealing with list of peaks so ignore
+#dealing with lists of peaks so ignore
 '''
-This function is dealing with the second run (file) of peaks in real time, in my head
+This function is dealing with the second run (file) of peaks in real-time, in my head,
 the function accepts one peak at a time, this is stored in a list then when the size of that
 list reaches a certain limit its contents are converted into peak objects. These objects, along with the peak
 objects that came from file 1 are used to perform the first alignment and create some anchors for the GPR model
 
-My only concern is the way ive set this up bellow I dont think its built for a continuous flow of data,
-im not entirely sure how you'd set a method up in that way. In any case, this is only pseudocode so can revist
+My only concern is the way I've set this up bellow I dont think its built for a continuous flow of data,
+I'm not entirely sure how you'd set a method up in that way. In any case, this is only pseudocode so can revisit
 later
 '''
 

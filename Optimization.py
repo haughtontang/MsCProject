@@ -1,3 +1,9 @@
+'''
+NOTE: This file should only be used for testing purposes
+When wanting to use find_best_hyperparameters to correct in real-time
+please use optimization_for_realtime.py- it requires different arguments to this file
+'''
+
 import GPy
 from peak_tools import PeakSet as ps
 import useful_functions as um
@@ -14,8 +20,8 @@ def find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1,
     mgf_path2 : file path to the corresponding mfg file of the second picked peak file
     
     DESCRIPTION: assesses various variance and length scale values and return the optimum
-    kernel parameters based on the number of peaksets generated post correction, and the
-    quality of their ms2 similairty scores
+    kernel parameters based on the number of peaksets generated post correction and the
+    quality of their ms2 similarity scores
     
     Returns
     -------
@@ -31,16 +37,16 @@ def find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1,
     
     ls = []
     
-    #Start at 30 as lower values dont optimize well
+    #Start at 30 as lower values don't optimize well
     
     initial_ls = 30.0
     
     ls.append(initial_ls)
     
     '''
-    A more extreme range of ls values was explored udring testing
-    however above the 150 the mean line will flatten- such a result also
-    isnt optimizing anything so this range was chosen
+    A more extreme range of ls values was explored during testing
+    however above the 150, the mean line will flatten- such a result also
+    isn't optimizing anything so this range was chosen
     '''
     
     while initial_ls < 150:
@@ -57,7 +63,7 @@ def find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1,
         
     results = []
     
-    #Nested loop bellow will test every variance value against eveery ls value to find the best results
+    #Nested loop bellow will test every variance value against every ls value to find the best results
     
     for v in variance:
         
@@ -109,7 +115,7 @@ def find_best_hyperparameters(filepath_to_match, filepath_to_correct, mgf_path1,
             kernel = GPy.kern.RBF(input_dim=1, variance= v, lengthscale= leng)
             m = GPy.models.GPRegression(X,Y, kernel = kernel)    
 
-            #Store the mean and variance predicitons from the model. The times extracted from the file_to_corect are passed to this function
+            #Store the mean and variance predictions from the model. The times extracted from the file_to_corect are passed to this function
             
             mean, var = m.predict(all_time, full_cov=False, Y_metadata=None, kern=None, likelihood=None, include_likelihood=True)
             
@@ -211,7 +217,7 @@ def check_correction_quality(list_of_peaksets):
         
             for peak in sets.get_peaks():
                 
-                #Not all peak objects have an ms2 attrbute so this checks for those that do
+                #Not all peak objects have an ms2 attribute so this checks for those that do
                 
                 if peak.get_ms2() != None:
                     
@@ -220,7 +226,7 @@ def check_correction_quality(list_of_peaksets):
                     ms2.append(peak.get_ms2())
             
             '''
-            Of the matched peaks, some may have an ms2 spectrum whilst the others dont, by ensuring
+            Of the matched peaks, some may have an ms2 spectrum whilst the others don't, by ensuring
             that the ms list is larger than 1 and there are no null values we can check the similarity
             score of both the spectra
             '''
@@ -230,7 +236,7 @@ def check_correction_quality(list_of_peaksets):
                 '''
                 The function that checks the similarity takes a list of spectrum objects
                 As its argument and returns a similarity score
-                If this score is above the treshold then the peaks match on m/z,rt and ms2-
+                If this score is above the threshold then the peaks match on m/z, rt and ms2-
                 Append that peakset to the list at the beginning of the function
                 '''
                 
@@ -266,11 +272,11 @@ def picking_best_results(results_list):
     
     best_results = []
     
-    #Make a list of best results based on number of ps generated
+    #Make a list of best results based on the number of ps generated
     
     for res in results_list:
         
-        #If its equal to the best result or within 10 peaks of it
+        #If it's equal to the best result or within 10 peaks of it
         
         peak_range = ps + 3
         

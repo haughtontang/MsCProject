@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug  5 15:19:43 2020
 
-@author: Don Haughton
-"""
 #Imports
 
 import GPy
@@ -47,7 +42,7 @@ print("Normal ms2: ", len(ms2))
 
 anchors = ps.ms2_comparison(normal_ps, 0.9)
 
-#Get 2 lists of the retnetion times of the matched MS2 anchors
+#Get 2 lists of the retention times of the matched MS2 anchors
 
 rt1, rt2 = um.rt_extraction(anchors)
 
@@ -60,13 +55,13 @@ rt_minus = um.subtract_attributes(rt1, rt2)
 X = np.array(rt2).reshape(len(rt2),1)
 Y = np.array(rt_minus).reshape(len(rt_minus),1)
 
-#Extract all the retention times of the feaks in file 2 to be used in correction
+#Extract all the retention times of the peaks in file 2 to be used in the correction
 
 all_time = um.rt_extraction(p2)
     
 all_time = np.array(all_time).reshape(len(all_time),1)
 
-#Set ip the kernel and model, the optimal var and ls figure are already known for this data from the optimization function
+#Set up the kernel and model, the optimal var and ls figure are already known for this data from the optimization function
 
 gp_kern = GPy.kern.RBF(input_dim=1, variance= 1, lengthscale= 91.56)
 gp_model = GPy.models.GPRegression(X,Y, kernel = gp_kern)    
@@ -114,7 +109,7 @@ print("Corrected ms2: ", len(corrected_ms2))
 
 '''
 The function bellow will look for ms2 peaksets that were removed during the
-correction and reassess them to determine if thy can be re-added as matching
+correction and reassess them to determine if they can be re-added as matching
 peaksets
 '''
 recovered = ivfun.get_reomoved_ms2_peaks(normal_ps, corrected_peaksets)
